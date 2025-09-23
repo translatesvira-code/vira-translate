@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+/* فونت Samim */
+@font-face {
+  font-family: 'Samim';
+  src: url('/fonts/Samim.woff2') format('woff2'),
+       url('/fonts/Samim.woff') format('woff'),
+       url('/fonts/Samim.ttf') format('truetype'),
+       url('/fonts/Samim.eot') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* بهینه‌سازی فونت برای بهتر نمایش دادن */
+.font-samim {
+  font-family: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* تنظیمات اعداد فارسی */
+.persian-numbers {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* تبدیل اعداد انگلیسی به فارسی */
+.persian-digits {
+  font-feature-settings: 'lnum' 0, 'pnum' 1;
+}
+
+/* تنظیمات کلی برای اعداد فارسی در کل پروژه */
+* {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+  -webkit-font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+  -moz-font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+  -ms-font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+}
+
+/* برای اعداد در جداول */
+table, .table, td, th {
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+}
+
+/* برای اعداد در دکمه‌ها */
+button, .btn {
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+}
+
+/* برای اعداد در input ها */
+input, select, textarea {
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+}
+
+/* برای اعداد در span ها */
+span, p, div {
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1 !important;
+}
+
+/* استایل‌های اضافی برای اعداد فارسی */
+.persian-digits {
+  font-feature-settings: 'lnum' 0, 'pnum' 1, 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* برای اعداد در جداول */
+table .persian-digits {
+  text-align: left;
+}
+
+/* برای اعداد بزرگ */
+.persian-number-large {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: -0.025em;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  to {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  to {
+    background-color: rgba(0, 0, 0, 0);
+  }
+}
+
+@keyframes modalOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes sidebarSlideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sidebarSlideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* DatePicker Styles */
+.rmdp-container {
+  width: 100%;
+}
+
+.rmdp-input {
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  color: #111827 !important;
+  background-color: white !important;
+}
+
+.rmdp-input:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.rmdp-calendar {
+  font-family: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif !important;
+  direction: rtl !important;
+}
+
+.rmdp-day-picker {
+  direction: rtl !important;
+}
+
+.rmdp-week-day {
+  color: #374151 !important;
+  font-weight: 500 !important;
+}
+
+.rmdp-day {
+  color: #111827 !important;
+}
+
+.rmdp-day.rmdp-selected {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.rmdp-day.rmdp-today {
+  background-color: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+.rmdp-day:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* تنظیمات متغیرهای CSS */
+:root {
+  --font-sans: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+  --font-mono: 'Samim', 'Courier New', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+* {
+  font-family: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+}
+
+html {
+  direction: rtl;
+  text-align: right;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
+  direction: rtl;
+  text-align: right;
+}
