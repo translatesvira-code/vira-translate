@@ -1,33 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toPersianNumbers } from '../../utils/numbers';
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import { useTab } from '../../context/TabContext';
+import { clientsAPI, Client, UpdateClientData } from '../../lib/clients-api';
+import { Order } from '../../lib/orders-api';
+import { unifiedAPI } from '../../lib/unified-api';
 
-interface Client {
-  id: number;
-  code: string;
-  name: string;
-  serviceType: string;
-  translateDate: string;
-  deliveryDate: string;
-  status: 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived';
-}
+// Client interface is now imported from clients-api
 
 const Clients: React.FC = () => {
   const { setClientProfile } = useTab();
   const [clients, setClients] = useState<Client[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isModalClosing, setIsModalClosing] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarClosing, setIsSidebarClosing] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -37,11 +30,6 @@ const Clients: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleteModalClosing, setIsDeleteModalClosing] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const [newClient, setNewClient] = useState({
-    name: '',
-    serviceType: '',
-    code: ''
-  });
   const [editForm, setEditForm] = useState({
     name: '',
     code: '',
@@ -57,10 +45,46 @@ const Clients: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (clientToDelete) {
-      setClients(prevClients => prevClients.filter(client => client.id !== clientToDelete.id));
-      handleCloseDeleteModal();
+      try {
+        // Find all orders for this client
+        const clientOrders = orders.filter(order => order.clientId === clientToDelete.id.toString());
+        
+        if (clientOrders.length > 0) {
+          // Delete all orders for this client
+          let allDeleted = true;
+          for (const order of clientOrders) {
+            const success = await unifiedAPI.deleteUnifiedOrder(order.id, false); // Don't delete client yet
+            if (!success) {
+              allDeleted = false;
+            }
+          }
+          
+          if (allDeleted) {
+            // Now delete the client
+            const clientDeleteSuccess = await clientsAPI.deleteClient(clientToDelete.id);
+            if (clientDeleteSuccess) {
+              setClients(prevClients => prevClients.filter(client => client.id !== clientToDelete.id));
+              setOrders(prevOrders => prevOrders.filter(order => order.clientId !== clientToDelete.id.toString()));
+            }
+          }
+        } else {
+          // No orders, just delete the client
+          const success = await clientsAPI.deleteClient(clientToDelete.id);
+          if (success) {
+            setClients(prevClients => prevClients.filter(client => client.id !== clientToDelete.id));
+          }
+        }
+        
+        handleCloseDeleteModal();
+      } catch (error) {
+        console.error('Error deleting client:', error);
+        // Fallback to local state update
+        setClients(prevClients => prevClients.filter(client => client.id !== clientToDelete.id));
+        setOrders(prevOrders => prevOrders.filter(order => order.clientId !== clientToDelete.id.toString()));
+        handleCloseDeleteModal();
+      }
     }
   };
 
@@ -73,43 +97,6 @@ const Clients: React.FC = () => {
     }, 300);
   };
 
-  const handleAddNewClient = () => {
-    if (newClient.name && newClient.serviceType && newClient.code) {
-      const newClientData: Client = {
-        id: clients.length + 1,
-        code: newClient.code,
-        name: newClient.name,
-        serviceType: newClient.serviceType,
-        translateDate: '',
-        deliveryDate: '',
-        status: 'accepted'
-      };
-      
-      setClients(prevClients => [newClientData, ...prevClients]);
-      setNewClient({ name: '', serviceType: '', code: '' });
-      setShowSuccessMessage(true);
-      
-      // Close modal with animation
-      handleCloseModal();
-      
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 5000);
-    }
-  };
-
-  const serviceTypes = [
-    'ترجمه رسمی', 'ترجمه فوری', 'ترجمه تخصصی', 'ترجمه ادبی', 'ترجمه پزشکی',
-    'ترجمه حقوقی', 'ترجمه فنی', 'ترجمه بازرگانی'
-  ];
-
-  const handleCloseModal = () => {
-    setIsModalClosing(true);
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setIsModalClosing(false);
-    }, 300);
-  };
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client);
@@ -139,22 +126,58 @@ const Clients: React.FC = () => {
     }
   };
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = async () => {
     if (editingClient) {
-      setClients(prevClients => 
-        prevClients.map(client => 
-          client.id === editingClient.id 
-            ? { ...client, ...editForm }
-            : client
-        )
-      );
-      handleCloseConfirmModal();
-      handleCloseSidebar();
-      setShowEditSuccess(true);
-      
-      setTimeout(() => {
-        setShowEditSuccess(false);
-      }, 5000);
+      try {
+        const updateData: UpdateClientData = {
+          name: editForm.name,
+          code: editForm.code,
+          serviceType: editForm.serviceType,
+          translateDate: editForm.translateDate,
+          deliveryDate: editForm.deliveryDate,
+          status: editForm.status
+        };
+
+        const updatedClient = await clientsAPI.updateClient(editingClient.id, updateData);
+        
+        if (updatedClient) {
+          setClients(prevClients => 
+            prevClients.map(client => 
+              client.id === editingClient.id ? updatedClient : client
+            )
+          );
+        } else {
+          // Fallback to local state update
+          setClients(prevClients => 
+            prevClients.map(client => 
+              client.id === editingClient.id 
+                ? { ...client, ...editForm }
+                : client
+            )
+          );
+        }
+        
+        handleCloseConfirmModal();
+        handleCloseSidebar();
+        setShowEditSuccess(true);
+        
+        setTimeout(() => {
+          setShowEditSuccess(false);
+        }, 5000);
+      } catch (error) {
+        console.error('Error updating client:', error);
+        // Fallback to local state update
+        setClients(prevClients => 
+          prevClients.map(client => 
+            client.id === editingClient.id 
+              ? { ...client, ...editForm }
+              : client
+          )
+        );
+        handleCloseConfirmModal();
+        handleCloseSidebar();
+        setShowEditSuccess(true);
+      }
     }
   };
 
@@ -202,109 +225,76 @@ const Clients: React.FC = () => {
     }
   };
 
-  // Generate fixed data for 10 users
-  const generateRandomData = (): Client[] => {
-    return [
-      {
-        id: 1,
-        code: 'TR0001',
-        name: 'احمد محمدی',
-        serviceType: 'ترجمه رسمی',
-        translateDate: '1403/01/15',
-        deliveryDate: '1403/01/25',
-        status: 'accepted'
-      },
-      {
-        id: 2,
-        code: 'TR0002',
-        name: 'فاطمه احمدی',
-        serviceType: 'ترجمه فوری',
-        translateDate: '1403/02/10',
-        deliveryDate: '1403/02/12',
-        status: 'translating'
-      },
-      {
-        id: 3,
-        code: 'TR0003',
-        name: 'علی رضایی',
-        serviceType: 'ترجمه تخصصی',
-        translateDate: '1403/02/20',
-        deliveryDate: '1403/03/05',
-        status: 'editing'
-      },
-      {
-        id: 4,
-        code: 'TR0004',
-        name: 'زهرا کریمی',
-        serviceType: 'ترجمه ادبی',
-        translateDate: '1403/03/01',
-        deliveryDate: '1403/03/15',
-        status: 'ready'
-      },
-      {
-        id: 5,
-        code: 'TR0005',
-        name: 'محمد حسینی',
-        serviceType: 'ترجمه پزشکی',
-        translateDate: '1403/03/10',
-        deliveryDate: '1403/03/20',
-        status: 'delivered'
-      },
-      {
-        id: 6,
-        code: 'TR0006',
-        name: 'مریم نوری',
-        serviceType: 'ترجمه حقوقی',
-        translateDate: '1403/03/15',
-        deliveryDate: '1403/03/25',
-        status: 'archived'
-      },
-      {
-        id: 7,
-        code: 'TR0007',
-        name: 'حسن صادقی',
-        serviceType: 'ترجمه فنی',
-        translateDate: '1403/04/01',
-        deliveryDate: '1403/04/10',
-        status: 'accepted'
-      },
-      {
-        id: 8,
-        code: 'TR0008',
-        name: 'نرگس قاسمی',
-        serviceType: 'ترجمه بازرگانی',
-        translateDate: '1403/04/05',
-        deliveryDate: '1403/04/15',
-        status: 'translating'
-      },
-      {
-        id: 9,
-        code: 'TR0009',
-        name: 'رضا موسوی',
-        serviceType: 'ترجمه رسمی',
-        translateDate: '1403/04/10',
-        deliveryDate: '1403/04/20',
-        status: 'editing'
-      },
-      {
-        id: 10,
-        code: 'TR0010',
-        name: 'سارا امینی',
-        serviceType: 'ترجمه فوری',
-        translateDate: '1403/04/15',
-        deliveryDate: '1403/04/25',
-        status: 'ready'
-      }
-    ];
+  const getTranslationTypeText = (type: string) => {
+    const types: Record<string, string> = {
+      'certified': 'ترجمه رسمی',
+      'simple': 'ترجمه ساده',
+      'sworn': 'ترجمه سوگند',
+      'notarized': 'ترجمه محضری'
+    };
+    return types[type] || type;
   };
 
-  useEffect(() => {
+  const getLanguageText = (lang: string) => {
+    const languages: Record<string, string> = {
+      'persian': 'فارسی',
+      'english': 'انگلیسی',
+      'arabic': 'عربی',
+      'french': 'فرانسوی',
+      'german': 'آلمانی',
+      'other': 'سایر'
+    };
+    return languages[lang] || lang;
+  };
+
+
+  const loadData = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-      setClients(generateRandomData());
+    try {
+      // Load unified orders with complete client data
+      console.log('🔍 Loading unified orders...');
+      const unifiedData = await unifiedAPI.getUnifiedOrders();
+      console.log('✅ Unified orders loaded:', unifiedData);
+      
+      // Store orders data
+      setOrders(unifiedData.orders);
+      
+      // Create clients from unified orders data
+      const clientsFromUnified = unifiedData.orders.map(order => ({
+        id: Number(order.clientId),
+        code: order.clientCode,
+        name: order.clientName,
+        serviceType: getTranslationTypeText(order.translationType) || 'ترجمه رسمی',
+        translateDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : '',
+        deliveryDate: order.status === 'ready' ? new Date(order.updatedAt).toLocaleDateString('fa-IR') : '',
+        status: order.status === 'acceptance' ? 'accepted' as const :
+                order.status === 'completion' ? 'translating' as const :
+                order.status === 'translation' ? 'translating' as const :
+                order.status === 'editing' ? 'editing' as const :
+                order.status === 'office' ? 'editing' as const :
+                order.status === 'ready' ? 'ready' as const :
+                'accepted' as const
+      }));
+      
+      // Remove duplicates based on client ID
+      const uniqueClients = clientsFromUnified.filter((client, index, self) => 
+        index === self.findIndex(c => c.id === client.id)
+      );
+      
+      console.log('✅ Clients created from unified data:', uniqueClients);
+      setClients(uniqueClients);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setClients([]);
+      setOrders([]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Reset to first page when search term or status changes
   useEffect(() => {
@@ -404,7 +394,7 @@ const Clients: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-64 placeholder-gray-700 text-gray-900"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-64 placeholder-gray-600 text-gray-900"
               />
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                 <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -413,16 +403,6 @@ const Clients: React.FC = () => {
               </div>
         </div>
 
-            {/* Add New Order Button */}
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 cursor-pointer flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              ثبت سفارش جدید
-            </button>
           </div>
           </div>
 
@@ -434,58 +414,67 @@ const Clients: React.FC = () => {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">ردیف</th>
-                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">کد</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">کد سفارش</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">نام مشتری</th>
-                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">نوع خدمت</th>
-                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">تاریخ ترجمه</th>
-                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">تاریخ تحویل</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">نوع ترجمه</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">زبان</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">تعداد صفحات</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">تاریخ ثبت</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">وضعیت</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-gray-600">عملیات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {currentClients.map((client, index) => (
-                  <tr key={client.id} className="hover:bg-gray-50 transition-colors duration-200">
-                    <td className="px-6 py-4 text-sm text-gray-800">{toPersianNumbers(startIndex + index + 1)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800 font-medium">{toPersianNumbers(client.code)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800">
-                      <button
-                        onClick={() => setClientProfile(client.name)}
-                        className="text-gray-800 hover:text-gray-600 transition-colors duration-200 cursor-pointer"
-                      >
-                        {client.name}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-800">{client.serviceType}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800">{client.translateDate}</td>
-                    <td className="px-6 py-4 text-sm text-gray-800">{client.deliveryDate}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
-                        {getStatusText(client.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-start gap-1">
-                        <button 
-                          onClick={() => handleEditClient(client)}
-                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                {currentClients.map((client, index) => {
+                  const order = orders.find(o => o.id.toString() === client.id.toString());
+                  return (
+                    <tr key={client.id} className="hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-6 py-4 text-sm text-gray-800">{toPersianNumbers(startIndex + index + 1)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-800 font-mono">{client.code}</td>
+                      <td className="px-6 py-4 text-sm text-gray-800">
+                        <button
+                          onClick={() => setClientProfile(client.name)}
+                          className="text-gray-800 hover:text-gray-600 transition-colors duration-200 cursor-pointer"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                          {client.name}
                         </button>
-                        <button 
-                          onClick={() => handleDeleteClient(client)}
-                          className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-          </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-800">{client.serviceType}</td>
+                      <td className="px-6 py-4 text-sm text-gray-800">
+                        {order ? `${getLanguageText(order.languageFrom)} → ${getLanguageText(order.languageTo)}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-800">
+                        {order ? toPersianNumbers(order.numberOfPages) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-800">{client.translateDate}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
+                          {getStatusText(client.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-start gap-1">
+                          <button 
+                            onClick={() => handleEditClient(client)}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClient(client)}
+                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -537,7 +526,11 @@ const Clients: React.FC = () => {
             </div>
             
             <div className="text-gray-600 font-medium">
-              {toPersianNumbers(startIndex + 1)} - {toPersianNumbers(Math.min(endIndex, filteredClients.length))} از {toPersianNumbers(filteredClients.length)}
+              {filteredClients.length === 0 ? (
+                '۰ - ۰ از ۰'
+              ) : (
+                `${toPersianNumbers(startIndex + 1)} - ${toPersianNumbers(Math.min(endIndex, filteredClients.length))} از ${toPersianNumbers(filteredClients.length)}`
+              )}
             </div>
             
             <div className="flex items-center space-x-4 space-x-reverse">
@@ -560,99 +553,7 @@ const Clients: React.FC = () => {
         </div>
                 </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop with blur */}
-          <div className={`absolute inset-0 backdrop-blur-sm bg-black bg-opacity-0 ${
-            isModalClosing 
-              ? 'animate-[fadeOut_0.3s_ease-out_forwards]' 
-              : 'animate-[fadeIn_0.3s_ease-out_forwards]'
-          }`}></div>
-          
-          {/* Modal Content */}
-          <div className={`relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform scale-95 opacity-0 ${
-            isModalClosing 
-              ? 'animate-[modalOut_0.3s_ease-out_forwards]' 
-              : 'animate-[modalIn_0.3s_ease-out_forwards]'
-          }`}>
-            {/* Close Button */}
-            <button
-              onClick={handleCloseModal}
-              className="absolute left-4 top-4 text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
 
-            {/* Modal Title */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">ثبت سفارش جدید</h2>
-
-            {/* Form */}
-            <div className="space-y-4">
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">نام و نام خانوادگی</label>
-                <input
-                  type="text"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                  placeholder="نام و نام خانوادگی را وارد کنید"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                />
-              </div>
-
-              {/* Service Type Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">نوع خدمت</label>
-                <select
-                  value={newClient.serviceType}
-                  onChange={(e) => setNewClient({...newClient, serviceType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                >
-                  <option value="">نوع خدمت را انتخاب کنید</option>
-                  {serviceTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Code Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">کد سفارش</label>
-                <input
-                  type="text"
-                  value={newClient.code}
-                  onChange={(e) => setNewClient({...newClient, code: e.target.value})}
-                  placeholder="کد سفارش را وارد کنید"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleAddNewClient}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
-              >
-                ثبت سفارش
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            سفارش با موفقیت ثبت شد
-          </div>
-        </div>
-      )}
 
       {/* Edit Success Message */}
       {showEditSuccess && (
@@ -709,7 +610,7 @@ const Clients: React.FC = () => {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -720,7 +621,7 @@ const Clients: React.FC = () => {
                   type="text"
                   value={editForm.code}
                   onChange={(e) => setEditForm({...editForm, code: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
                 />
               </div>
 
@@ -730,11 +631,16 @@ const Clients: React.FC = () => {
                 <select
                   value={editForm.serviceType}
                   onChange={(e) => setEditForm({...editForm, serviceType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
                 >
-                  {serviceTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
+                  <option value="ترجمه رسمی">ترجمه رسمی</option>
+                  <option value="ترجمه فوری">ترجمه فوری</option>
+                  <option value="ترجمه تخصصی">ترجمه تخصصی</option>
+                  <option value="ترجمه ادبی">ترجمه ادبی</option>
+                  <option value="ترجمه پزشکی">ترجمه پزشکی</option>
+                  <option value="ترجمه حقوقی">ترجمه حقوقی</option>
+                  <option value="ترجمه فنی">ترجمه فنی</option>
+                  <option value="ترجمه بازرگانی">ترجمه بازرگانی</option>
                 </select>
               </div>
 
@@ -774,7 +680,7 @@ const Clients: React.FC = () => {
                 <select
                   value={editForm.status}
                   onChange={(e) => setEditForm({...editForm, status: e.target.value as 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived'})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
                 >
                   <option value="accepted">پذیرش</option>
                   <option value="translating">ترجمه</option>

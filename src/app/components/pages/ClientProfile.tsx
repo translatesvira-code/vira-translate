@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toPersianNumbers } from '../../utils/numbers';
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
+import { ordersAPI, Order } from '../../lib/orders-api';
+import { unifiedAPI } from '../../lib/unified-api';
 
 interface Client {
   id: number;
@@ -25,6 +27,7 @@ interface ClientProfileProps {
 const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState('این پروژه شامل ترجمه متون تخصصی با بالاترین کیفیت و دقت می‌باشد. تمامی مراحل ترجمه، ویرایش و بازخوانی با دقت انجام خواهد شد.');
@@ -44,6 +47,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     translateDate: '',
     deliveryDate: ''
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleteModalClosing, setIsDeleteModalClosing] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
   interface UploadedFile {
     id: string;
     name: string;
@@ -62,111 +69,62 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  // Generate the same fixed data as in Clients component
-  const generateRandomData = (): Client[] => {
-    return [
-      {
-        id: 1,
-        code: 'TR0001',
-        name: 'احمد محمدی',
-        serviceType: 'ترجمه رسمی',
-        translateDate: '1403/01/15',
-        deliveryDate: '1403/01/25',
-        status: 'accepted'
-      },
-      {
-        id: 2,
-        code: 'TR0002',
-        name: 'فاطمه احمدی',
-        serviceType: 'ترجمه فوری',
-        translateDate: '1403/02/10',
-        deliveryDate: '1403/02/12',
-        status: 'translating'
-      },
-      {
-        id: 3,
-        code: 'TR0003',
-        name: 'علی رضایی',
-        serviceType: 'ترجمه تخصصی',
-        translateDate: '1403/02/20',
-        deliveryDate: '1403/03/05',
-        status: 'editing'
-      },
-      {
-        id: 4,
-        code: 'TR0004',
-        name: 'زهرا کریمی',
-        serviceType: 'ترجمه ادبی',
-        translateDate: '1403/03/01',
-        deliveryDate: '1403/03/15',
-        status: 'ready'
-      },
-      {
-        id: 5,
-        code: 'TR0005',
-        name: 'محمد حسینی',
-        serviceType: 'ترجمه پزشکی',
-        translateDate: '1403/03/10',
-        deliveryDate: '1403/03/20',
-        status: 'delivered'
-      },
-      {
-        id: 6,
-        code: 'TR0006',
-        name: 'مریم نوری',
-        serviceType: 'ترجمه حقوقی',
-        translateDate: '1403/03/15',
-        deliveryDate: '1403/03/25',
-        status: 'archived'
-      },
-      {
-        id: 7,
-        code: 'TR0007',
-        name: 'حسن صادقی',
-        serviceType: 'ترجمه فنی',
-        translateDate: '1403/04/01',
-        deliveryDate: '1403/04/10',
-        status: 'accepted'
-      },
-      {
-        id: 8,
-        code: 'TR0008',
-        name: 'نرگس قاسمی',
-        serviceType: 'ترجمه بازرگانی',
-        translateDate: '1403/04/05',
-        deliveryDate: '1403/04/15',
-        status: 'translating'
-      },
-      {
-        id: 9,
-        code: 'TR0009',
-        name: 'رضا موسوی',
-        serviceType: 'ترجمه رسمی',
-        translateDate: '1403/04/10',
-        deliveryDate: '1403/04/20',
-        status: 'editing'
-      },
-      {
-        id: 10,
-        code: 'TR0010',
-        name: 'سارا امینی',
-        serviceType: 'ترجمه فوری',
-        translateDate: '1403/04/15',
-        deliveryDate: '1403/04/25',
-        status: 'ready'
-      }
-    ];
-  };
+  const loadOrders = useCallback(async () => {
+    try {
+      console.log('🔍 Loading orders for client:', clientName);
+      const unifiedData = await unifiedAPI.getUnifiedOrders();
+      
+      // Filter orders for this specific client
+      const clientOrders = unifiedData.orders.filter(order => order.clientName === clientName);
+      console.log('✅ Found orders for client:', clientOrders);
+      setOrders(clientOrders);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    }
+  }, [clientName]);
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      const clients = generateRandomData();
-      const foundClient = clients.find(c => c.name === clientName);
-      setClient(foundClient || null);
-      setLoading(false);
-    }, 500);
-  }, [clientName]);
+    const loadClient = async () => {
+      setLoading(true);
+      try {
+        // Try to find client by name from orders
+        const orders = await ordersAPI.getOrders();
+        const orderWithClient = orders.find(order => order.clientName === clientName);
+        
+        if (orderWithClient) {
+          // Create client object from order data
+          const clientData: Client = {
+            id: Number(orderWithClient.clientId) || Number(orderWithClient.id),
+            code: orderWithClient.clientCode,
+            name: orderWithClient.clientName,
+            serviceType: orderWithClient.translationType,
+            translateDate: orderWithClient.createdAt ? new Date(orderWithClient.createdAt).toLocaleDateString('fa-IR') : '',
+            deliveryDate: '',
+            status: orderWithClient.status === 'acceptance' ? 'accepted' as const :
+                    orderWithClient.status === 'completion' ? 'translating' as const :
+                    orderWithClient.status === 'translation' ? 'translating' as const :
+                    orderWithClient.status === 'editing' ? 'editing' as const :
+                    orderWithClient.status === 'office' ? 'editing' as const :
+                    orderWithClient.status === 'ready' ? 'ready' as const :
+                    'accepted' as const
+          };
+          setClient(clientData);
+        } else {
+          setClient(null);
+        }
+      } catch (error) {
+        console.error('Error loading client:', error);
+        setClient(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClient();
+    
+    // Load orders for this client
+    loadOrders();
+  }, [clientName, loadOrders]);
 
   const handleBack = () => {
     router.push('/?tab=clients');
@@ -253,6 +211,46 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
       setShowEditModal(false);
       setIsEditModalClosing(false);
       setEditingField(null);
+    }, 300);
+  };
+
+  const handleDeleteOrder = (order: Order) => {
+    setOrderToDelete(order);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (orderToDelete) {
+      try {
+        console.log('🗑️ Deleting order:', orderToDelete);
+        const success = await unifiedAPI.deleteUnifiedOrder(orderToDelete.id, false);
+        
+        if (success) {
+          // Remove order from local state
+          setOrders(prevOrders => prevOrders.filter(order => order.id !== orderToDelete.id));
+          setShowDeleteSuccess(true);
+          
+          setTimeout(() => {
+            setShowDeleteSuccess(false);
+          }, 3000);
+        } else {
+          console.error('Failed to delete order');
+        }
+        
+        handleCloseDeleteModal();
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        handleCloseDeleteModal();
+      }
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalClosing(true);
+    setTimeout(() => {
+      setShowDeleteModal(false);
+      setIsDeleteModalClosing(false);
+      setOrderToDelete(null);
     }, 300);
   };
 
@@ -611,7 +609,91 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                   <span className="font-medium text-gray-800">{toPersianNumbers(client.id)}</span>
                 </div>
               </div>
-          </div>
+            </div>
+
+            {/* Orders Section */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                سفارشات مشتری
+              </h2>
+              
+              {orders.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد سفارش</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد کاربر</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع ترجمه</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع سند</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">زبان</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تعداد صفحات</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">وضعیت</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تاریخ ایجاد</th>
+                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {orders.map((order) => (
+                        <tr key={order.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.orderCode}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.clientCode}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{order.translationType}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{order.documentType}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{order.languageFrom} → {order.languageTo}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{toPersianNumbers(order.numberOfPages.toString())}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              order.status === 'acceptance' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'completion' ? 'bg-yellow-100 text-yellow-800' :
+                              order.status === 'translation' ? 'bg-purple-100 text-purple-800' :
+                              order.status === 'editing' ? 'bg-orange-100 text-orange-800' :
+                              order.status === 'office' ? 'bg-indigo-100 text-indigo-800' :
+                              order.status === 'ready' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {order.status === 'acceptance' ? 'پذیرش' :
+                               order.status === 'completion' ? 'تکمیل اطلاعات' :
+                               order.status === 'translation' ? 'ترجمه' :
+                               order.status === 'editing' ? 'ویرایش' :
+                               order.status === 'office' ? 'امور دفتری' :
+                               order.status === 'ready' ? 'آماده تحویل' :
+                               order.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => handleDeleteOrder(order)}
+                              className="text-red-600 hover:text-red-800 transition-colors duration-200 cursor-pointer"
+                              title="حذف سفارش"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 text-sm">هیچ سفارشی برای این مشتری ثبت نشده است</p>
+                </div>
+              )}
+            </div>
 
           {/* Service Details */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -1213,6 +1295,75 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Order Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className={`bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all duration-300 ${
+              isDeleteModalClosing 
+                ? 'animate-[modalOut_0.3s_ease-in_forwards]' 
+                : 'animate-[modalIn_0.3s_ease-out_forwards]'
+            }`}>
+              <div className="p-6">
+                {/* Modal Icon */}
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+
+                {/* Modal Title */}
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
+                  حذف سفارش
+                </h2>
+
+                {/* Modal Content */}
+                <div className="text-center mb-6">
+                  <p className="text-gray-700 mb-2">
+                    آیا مطمئن هستید که می‌خواهید این سفارش را حذف کنید؟
+                  </p>
+                  {orderToDelete && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-1">کد سفارش:</p>
+                      <p className="font-mono text-gray-800">{orderToDelete.orderCode}</p>
+                    </div>
+                  )}
+                  <p className="text-red-600 text-sm mt-2">
+                    این عمل قابل بازگشت نیست!
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleConfirmDeleteOrder}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
+                  >
+                    بله، حذف کن
+                  </button>
+                  <button
+                    onClick={handleCloseDeleteModal}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
+                  >
+                    انصراف
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Success Message */}
+        {showDeleteSuccess && (
+          <div className="fixed top-4 right-4 z-50">
+            <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-[slideInRight_0.3s_ease-out_forwards]">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              سفارش با موفقیت حذف شد
             </div>
           </div>
         )}

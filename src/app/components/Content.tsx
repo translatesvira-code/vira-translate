@@ -7,6 +7,7 @@ import Users from './pages/Users';
 import Financial from './pages/Financial';
 import Settings from './pages/Settings';
 import ClientProfile from './pages/ClientProfile';
+import OrderWizard from './pages/OrderWizard';
 
 const Content: React.FC = () => {
   const { activeTab, clientProfileName } = useTab();
@@ -23,6 +24,8 @@ const Content: React.FC = () => {
         return <Settings />;
       case 'client-profile':
         return <ClientProfile clientName={clientProfileName || ''} />;
+      case 'order-wizard':
+        return <OrderWizard />;
       default:
         return <Clients />;
     }

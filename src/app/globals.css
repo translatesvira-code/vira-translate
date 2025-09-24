@@ -145,6 +145,17 @@ table .persian-digits {
   }
 }
 
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* DatePicker Styles */
 .rmdp-container {
   width: 100%;

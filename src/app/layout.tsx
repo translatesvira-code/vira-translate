@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AutoPersianNumbers from "./components/AutoPersianNumbers";
+import { AuthProvider } from "./context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Vira Translate",
@@ -18,8 +19,10 @@ export default function RootLayout({
         className="antialiased font-samim"
         style={{ fontFamily: '"Samim", "Tahoma", "Arial", "Helvetica", sans-serif' }}
       >
-        {children}
-        <AutoPersianNumbers />
+        <AuthProvider>
+          {children}
+          <AutoPersianNumbers />
+        </AuthProvider>
       </body>
     </html>
   );
