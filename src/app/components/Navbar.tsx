@@ -31,8 +31,8 @@ const Sidebar: React.FC = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`w-full text-right px-4 py-3 rounded-lg transition-colors duration-200 cursor-pointer ${
               activeTab === tab.id
-                ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-500'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                ? 'bg-[#687B6926] text-[#687B69] border-r-2 border-[#687B69]'
+                : 'text-[#656051] hover:bg-[#E4D8C726] hover:text-[#48453F]'
             }`}
           >
             {tab.label}
@@ -44,8 +44,8 @@ const Sidebar: React.FC = () => {
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-800">{user?.name || 'کاربر'}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm font-medium text-[#48453F]">{user?.name || 'کاربر'}</p>
+            <p className="text-xs text-[#656051]">
               {user?.role === 'administrator' ? 'مدیر سیستم' : 
                user?.role === 'editor' ? 'ویراستار' : 
                user?.role === 'author' ? 'نویسنده' : 
@@ -56,7 +56,7 @@ const Sidebar: React.FC = () => {
           </div>
           <button 
             onClick={logout}
-            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 cursor-pointer"
+            className="p-2 text-[#A6A499] hover:text-[#A43E2F] hover:bg-[#A43E2F26] rounded-lg transition-colors duration-200 cursor-pointer"
             title="خروج از سیستم"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { toPersianNumbers } from '../../utils/numbers';
 import { settingsAPI, ServiceSettings, CategorySettings, SettingsData, DocumentItem, LanguageSettings } from '../../lib/settings-api';
 import Notification from '../Notification';
+import { Button, TabButton } from '../ui';
 
 // Interfaces are now imported from settings-api
 
@@ -146,7 +147,10 @@ const Settings: React.FC = () => {
           // Always set addition display, even if 0
           newPriceDisplays[`service_${service.id}_addition`] = service.additionValue > 0 
             ? (service.additionType === 'percentage' 
-                ? service.additionValue.toString() 
+                ? service.additionValue.toString().replace(/[0-9]/g, (digit: string) => {
+                    const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                    return persianDigits[parseInt(digit)];
+                  })
                 : formatPersianNumber(service.additionValue.toString()))
             : '';
         });
@@ -449,44 +453,38 @@ const Settings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
+    <div className="min-h-screen p-8" style={{ backgroundColor: '#f9f8f5' }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-semibold" style={{ color: '#4b483f' }}>تنظیمات سیستم</h1>
             
             {/* Tab Navigation */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
+            <div className="flex rounded-lg p-1" style={{ backgroundColor: '#f5f4f1' }}>
+              <TabButton
                 onClick={() => setActiveTab('services')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'services'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                active={activeTab === 'services'}
+                variant="secondary"
+                className="px-3 py-1.5 text-sm font-medium rounded-md mx-1 min-w-[80px] text-center"
               >
                 خدمات
-              </button>
-              <button
+              </TabButton>
+              <TabButton
                 onClick={() => setActiveTab('languages')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'languages'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                active={activeTab === 'languages'}
+                variant="secondary"
+                className="px-3 py-1.5 text-sm font-medium rounded-md mx-1 min-w-[80px] text-center"
               >
                 زبان‌ها
-              </button>
-              <button
+              </TabButton>
+              <TabButton
                 onClick={() => setActiveTab('invoice')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'invoice'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                active={activeTab === 'invoice'}
+                variant="secondary"
+                className="px-3 py-1.5 text-sm font-medium rounded-md mx-1 min-w-[140px] text-center"
               >
                 تنظیمات فاکتور
-              </button>
+              </TabButton>
             </div>
           </div>
           
@@ -494,7 +492,7 @@ const Settings: React.FC = () => {
           {activeTab === 'services' && (
             <>
               {/* Services Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+          <div className="rounded-lg border border-gray-200 p-6 mb-8" style={{ backgroundColor: '#fcfbf9' }}>
             <h2 className="text-lg font-semibold text-gray-800 mb-4">خدمات ثابت</h2>
             
             <div className="space-y-4">
@@ -529,7 +527,7 @@ const Settings: React.FC = () => {
                           updateService(service.id, 'price', numericValue);
                         });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-900 text-right font-persian-numbers"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 text-right font-persian-numbers"
                       dir="ltr"
                     />
                   </div>
@@ -573,11 +571,15 @@ const Settings: React.FC = () => {
                         const inputValue = (e.target as HTMLInputElement).value;
                         
                         if (service.additionType === 'percentage') {
-                          // For percentage, just allow numbers
+                          // For percentage, allow numbers and convert to Persian
                           const cleanValue = inputValue.replace(/[^0-9]/g, '');
+                          const persianValue = cleanValue.replace(/[0-9]/g, (digit: string) => {
+                            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                            return persianDigits[parseInt(digit)];
+                          });
                           setPriceDisplays(prev => ({
                             ...prev,
-                            [`service_${service.id}_addition`]: cleanValue
+                            [`service_${service.id}_addition`]: persianValue
                           }));
                           updateService(service.id, 'additionValue', Number(cleanValue) || 0);
                         } else {
@@ -592,7 +594,7 @@ const Settings: React.FC = () => {
                           });
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-900 text-right font-persian-numbers"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 text-right font-persian-numbers"
                       dir="ltr"
                     />
                   </div>
@@ -635,18 +637,20 @@ const Settings: React.FC = () => {
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="text-md font-medium text-gray-700">آیتم‌های سند</h3>
                       <div className="flex gap-2">
-                        <button
+                        <Button
                           onClick={() => addDocumentItem(category.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                          variant="primary"
+                          size="sm"
+                          className="px-3 py-1"
                         >
                           + افزودن آیتم
-                        </button>
+                        </Button>
                       </div>
                     </div>
                     
                     <div className="space-y-3">
                       {(category.items || []).map((item) => (
-                        <div key={item.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div key={item.id} className="p-4 bg-[#EDE9DF] rounded-lg border border-[#DAD3C9]">
                           {/* Main Item Row */}
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
                             <div>
@@ -655,7 +659,7 @@ const Settings: React.FC = () => {
                                 type="text"
                                 value={item.name}
                                 onChange={(e) => updateDocumentItem(category.id, item.id, 'name', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
                               />
                             </div>
                             
@@ -677,7 +681,7 @@ const Settings: React.FC = () => {
                                     updateDocumentItem(category.id, item.id, 'translationPrice', numericValue);
                                   });
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-900 text-right font-persian-numbers"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 text-right font-persian-numbers"
                                 dir="ltr"
                               />
                             </div>
@@ -700,7 +704,7 @@ const Settings: React.FC = () => {
                                     updateDocumentItem(category.id, item.id, 'officeServicePrice', numericValue);
                                   });
                                 }}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-900 text-right font-persian-numbers"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 text-right font-persian-numbers"
                                 dir="ltr"
                               />
                             </div>
@@ -716,36 +720,43 @@ const Settings: React.FC = () => {
                                   dir="ltr"
                                 />
                               </div>
-                              <button
+                              <Button
                                 onClick={() => removeDocumentItem(category.id, item.id)}
-                                className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200"
+                                variant="tertiary"
+                                size="sm"
+                                className="p-2"
+                                icon={
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                }
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                                حذف
+                              </Button>
                             </div>
                           </div>
 
                           {/* Inquiry Section */}
-                          <div className="border-t border-blue-200 pt-4">
+                          <div className="border-t border-[#DAD3C9] pt-4">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3">
                                 <input
                                   type="checkbox"
                                   checked={item.hasInquiry}
                                   onChange={(e) => updateDocumentItem(category.id, item.id, 'hasInquiry', e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                  className="w-4 h-4 text-[#687B69] border-gray-300 rounded focus:ring-[#687B69]"
                                 />
                                 <label className="text-sm font-medium text-gray-700">گزینه استعلام</label>
                               </div>
                               {item.hasInquiry && (
-                                <button
+                                <Button
                                   onClick={() => addInquiryPrice(category.id, item.id)}
-                                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                                  variant="primary"
+                                  size="sm"
+                                  className="px-3 py-1"
                                 >
                                   + افزودن هزینه استعلام
-                                </button>
+                                </Button>
                               )}
                             </div>
                             
@@ -770,17 +781,22 @@ const Settings: React.FC = () => {
                                           updateInquiryPrice(category.id, item.id, index, numericValue);
                                         });
                                       }}
-                                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-right font-persian-numbers"
+                                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 text-right font-persian-numbers"
                                       dir="ltr"
                                     />
-                                    <button
+                                    <Button
                                       onClick={() => removeInquiryPrice(category.id, item.id, index)}
-                                      className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded transition-colors duration-200"
+                                      variant="tertiary"
+                                      size="sm"
+                                      className="p-2"
+                                      icon={
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      }
                                     >
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
+                                      حذف
+                                    </Button>
                                   </div>
                                 ))}
                               </div>
@@ -801,8 +817,8 @@ const Settings: React.FC = () => {
           {activeTab === 'languages' && (
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-[#C9DDC726] rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-[#687B69]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                   </svg>
                 </div>
@@ -814,9 +830,9 @@ const Settings: React.FC = () => {
               
               <div className="space-y-6">
                 {/* Language Pair Creator */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                <div className="bg-gradient-to-r from-[#EDECE614] to-[#E4D8C714] rounded-xl p-6 border border-[#C0B8AC66]">
                   <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-[#687B69]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     <h3 className="text-lg font-semibold text-gray-800">افزودن جفت زبان جدید</h3>
@@ -828,7 +844,7 @@ const Settings: React.FC = () => {
                       <select
                         value={languages.from}
                         onChange={(e) => setLanguages(prev => ({ ...prev, from: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white shadow-sm transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 bg-white shadow-sm transition-all duration-200"
                       >
                         <option value="persian">فارسی</option>
                         <option value="english">انگلیسی</option>
@@ -859,7 +875,7 @@ const Settings: React.FC = () => {
                       <select
                         value={languages.to}
                         onChange={(e) => setLanguages(prev => ({ ...prev, to: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white shadow-sm transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900 bg-white shadow-sm transition-all duration-200"
                       >
                         <option value="persian">فارسی</option>
                         <option value="english">انگلیسی</option>
@@ -878,15 +894,19 @@ const Settings: React.FC = () => {
                     </div>
 
                     <div className="flex-1">
-                      <button
+                      <Button
                         onClick={addLanguagePair}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                        variant="primary"
+                        size="lg"
+                        className="w-full px-6 py-3 shadow-sm hover:shadow-md cursor-pointer"
+                        icon={
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                        }
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
                         افزودن
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -898,18 +918,18 @@ const Settings: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                     <h3 className="text-lg font-semibold text-gray-800">جفت زبان‌های موجود</h3>
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                    <span className="bg-[#C9DDC726] text-[#687B69] text-xs font-medium px-2 py-1 rounded-full">
                       {toPersianNumbers(languages.pairs.length)}
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {languages.pairs.map((pair, index) => (
-                      <div key={index} className="group bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all duration-200">
+                      <div key={index} className="group bg-white rounded-lg border border-gray-200 p-4 hover:border-[#A5B8A3] hover:shadow-sm transition-all duration-200">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-8 h-8 bg-[#C9DDC726] rounded-lg flex items-center justify-center">
+                              <svg className="w-4 h-4 text-[#687B69]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                               </svg>
                             </div>
@@ -925,19 +945,21 @@ const Settings: React.FC = () => {
                             {!languages.pairs.some(existingPair => 
                               existingPair.from === pair.to && existingPair.to === pair.from
                             ) && (
-                              <button
+                              <Button
                                 onClick={() => createReversePair(pair.from, pair.to)}
-                                className="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                                variant="secondary"
+                                size="sm"
+                                className="w-8 h-8 p-0 cursor-pointer"
                                 title="ایجاد حالت برعکس"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
-                              </button>
+                              </Button>
                             )}
                             <button
                               onClick={() => removeLanguagePair(index)}
-                              className="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                              className="w-8 h-8 p-0 bg-[#A43E2F26] hover:bg-[#A43E2F40] text-[#A43E2F] rounded-lg transition-colors cursor-pointer flex items-center justify-center"
                               title="حذف"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -976,7 +998,7 @@ const Settings: React.FC = () => {
                   <textarea
                     value={invoiceSettings.header}
                     onChange={(e) => setInvoiceSettings(prev => ({ ...prev, header: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900"
                     rows={3}
                     placeholder="متن هدر فاکتور را وارد کنید"
                   />
@@ -987,7 +1009,7 @@ const Settings: React.FC = () => {
                   <textarea
                     value={invoiceSettings.footer}
                     onChange={(e) => setInvoiceSettings(prev => ({ ...prev, footer: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] text-gray-900"
                     rows={3}
                     placeholder="متن فوتر فاکتور را وارد کنید"
                   />
@@ -1000,16 +1022,19 @@ const Settings: React.FC = () => {
           <div className="mt-8 flex justify-between items-center">
             <div className="text-sm text-gray-600">
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#687B69]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 فرم را کامل کنید و سپس ذخیره کنید
               </div>
             </div>
-            <button
+            <Button
               onClick={saveSettings}
               disabled={loading}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
+              loading={loading}
+              variant="primary"
+              size="lg"
+              className="px-8 py-3 shadow-lg cursor-pointer"
             >
               {loading ? (
                 <>
@@ -1027,7 +1052,7 @@ const Settings: React.FC = () => {
                   ذخیره تنظیمات
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

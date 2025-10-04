@@ -163,14 +163,14 @@ const Archive: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'acceptance': return 'bg-blue-100 text-blue-800 border border-blue-200';
-      case 'completion': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
-      case 'translating': return 'bg-orange-100 text-orange-800 border border-orange-200';
-      case 'editing': return 'bg-purple-100 text-purple-800 border border-purple-200';
-      case 'office': return 'bg-pink-100 text-pink-800 border border-pink-200';
-      case 'ready': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'archived': return 'bg-gray-100 text-gray-800 border border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border border-gray-200';
+      case 'acceptance': return 'bg-[#687B6926] text-[#687B69] border border-[#687B6966]';
+      case 'completion': return 'bg-[#2B593E26] text-[#2B593E] border border-[#2B593E66]';
+      case 'translating': return 'bg-[#A43E2F26] text-[#A43E2F] border border-[#A43E2F66]';
+      case 'editing': return 'bg-[#A5B8A326] text-[#A5B8A3] border border-[#A5B8A366]';
+      case 'office': return 'bg-[#6A7B7E26] text-[#6A7B7E] border border-[#6A7B7E66]';
+      case 'ready': return 'bg-[#2B593E26] text-[#2B593E] border border-[#2B593E66]';
+      case 'archived': return 'bg-[#C0B8AC26] text-[#656051] border border-[#C0B8AC66]';
+      default: return 'bg-[#C0B8AC26] text-[#656051] border border-[#C0B8AC66]';
     }
   };
 
@@ -261,7 +261,7 @@ const Archive: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-64 placeholder-gray-600 text-gray-900"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] w-64 placeholder-gray-600 text-gray-900"
               />
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                 <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -272,7 +272,7 @@ const Archive: React.FC = () => {
           <div>
               <button
                 onClick={handleExportCSV}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer flex items-center gap-2"
+                className="bg-[#687B69] hover:bg-[#2B593E] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -327,7 +327,7 @@ const Archive: React.FC = () => {
                         <div className="flex items-center justify-start gap-1">
                           <button 
                             onClick={() => handleDeleteClient(client)}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                            className="bg-[#A43E2F26] hover:bg-[#A43E2F40] text-[#A43E2F] p-2 rounded-lg transition-colors duration-200 cursor-pointer"
                             title="حذف"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -416,7 +416,7 @@ const Archive: React.FC = () => {
                 </button>
                 <button
                   onClick={handleConfirmDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200 cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#A43E2F] hover:bg-[#992A1F] rounded-lg transition-colors duration-200 cursor-pointer"
                 >
                   حذف
                 </button>

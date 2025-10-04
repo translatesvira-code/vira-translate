@@ -15,6 +15,7 @@ export interface Client {
   translateDate: string;
   deliveryDate: string;
   status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
+  description?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -49,6 +50,7 @@ export interface UpdateClientData {
   translateDate?: string;
   deliveryDate?: string;
   status?: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
+  description?: string;
 }
 
 class ClientsAPI {
@@ -229,19 +231,38 @@ class ClientsAPI {
     try {
       const headers = await this.getAuthHeaders();
       
-      const updateData = {
-        title: clientData.name,
-        content: `کد سفارش: ${clientData.code}\nنوع خدمت: ${clientData.serviceType}`,
+      // Update client data
+      
+      const updateData: {
+        title?: string;
+        content?: string;
+        meta: Record<string, unknown>;
+      } = {
         meta: {
-          client_code: clientData.code,
-          client_name: clientData.name,
-          service_type: clientData.serviceType,
-          translate_date: clientData.translateDate || '',
-          delivery_date: clientData.deliveryDate || '',
-          client_status: clientData.status,
           updated_at: new Date().toISOString()
         }
       };
+
+      // Only include fields that are actually provided
+      if (clientData.name !== undefined) {
+        updateData.title = clientData.name;
+        updateData.meta.client_name = clientData.name;
+      }
+      if (clientData.firstName !== undefined) updateData.meta.client_first_name = clientData.firstName;
+      if (clientData.lastName !== undefined) updateData.meta.client_last_name = clientData.lastName;
+      if (clientData.company !== undefined) updateData.meta.client_company = clientData.company;
+      if (clientData.phone !== undefined) updateData.meta.client_phone = clientData.phone;
+      if (clientData.email !== undefined) updateData.meta.client_email = clientData.email;
+      if (clientData.address !== undefined) updateData.meta.client_address = clientData.address;
+      if (clientData.nationalId !== undefined) updateData.meta.client_national_id = clientData.nationalId;
+      if (clientData.code !== undefined) updateData.meta.client_code = clientData.code;
+      if (clientData.serviceType !== undefined) updateData.meta.service_type = clientData.serviceType;
+      if (clientData.translateDate !== undefined) updateData.meta.translate_date = clientData.translateDate;
+      if (clientData.deliveryDate !== undefined) updateData.meta.delivery_date = clientData.deliveryDate;
+      if (clientData.status !== undefined) updateData.meta.client_status = clientData.status;
+      if (clientData.description !== undefined) updateData.meta.client_description = clientData.description;
+
+      // Send update data
 
       // Try custom post type first
       const response = await fetch(`${this.baseUrl}/${this.customPostType}/${id}`, {
@@ -250,9 +271,15 @@ class ClientsAPI {
         body: JSON.stringify(updateData),
       });
 
+      // Check response status
+
       if (response.ok) {
         const post = await response.json();
+        // Update successful
         return this.mapPostToClient(post);
+      } else {
+        const errorText = await response.text();
+        // Update failed, trying fallback
       }
 
       // Fallback: update as regular post
@@ -381,13 +408,16 @@ class ClientsAPI {
   private mapPostToClient(post: Record<string, unknown>): Client {
     const meta = (post.meta as Record<string, unknown>) || {};
     
+    const clientCompany = (meta.client_company as string) || '';
+    const clientDescription = (meta.client_description as string) || '';
+
     const client = {
       id: Number(post.id) || 0,
       code: (meta.client_code as string) || `TR${(post.id as number || 0).toString().padStart(4, '0')}`,
       name: (meta.client_name as string) || ((post.title as Record<string, unknown>)?.rendered as string) || 'نامشخص',
       firstName: (meta.client_first_name as string) || '',
       lastName: (meta.client_last_name as string) || '',
-      company: (meta.client_company as string) || '',
+      company: clientCompany,
       phone: (meta.client_phone as string) || '',
       email: (meta.client_email as string) || '',
       address: (meta.client_address as string) || '',
@@ -396,6 +426,7 @@ class ClientsAPI {
       translateDate: (meta.translate_date as string) || '',
       deliveryDate: (meta.delivery_date as string) || '',
       status: (meta.client_status as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived') || 'acceptance',
+      description: clientDescription,
       created_at: (meta.created_at as string) || (post.date as string),
       updated_at: (meta.updated_at as string) || (post.modified as string)
     };

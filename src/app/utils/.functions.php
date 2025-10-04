@@ -165,15 +165,17 @@ add_action('init', function() {
         ),
         'public' => true,
         'has_archive' => true,
-        'supports' => array('title', 'editor', 'custom-fields'),
-        'show_in_rest' => true, // Enable REST API
-        'rest_base' => 'clients', // Endpoint name
-        'capability_type' => 'post',
-        'capabilities' => array(
-            'create_posts' => 'edit_posts',
-            'delete_posts' => 'edit_posts',
-            'delete_post' => 'edit_posts',
-        ),
+        'supports' => array('title', 'editor', 'custom-fields'    ),
+    'show_in_rest' => true, // Enable REST API
+    'rest_base' => 'clients', // Endpoint name
+    'capability_type' => 'post',
+    'capabilities' => array(
+        'create_posts' => 'edit_posts',
+        'delete_posts' => 'edit_posts',
+        'delete_post' => 'edit_posts',
+        'edit_posts' => 'edit_posts',
+        'edit_post' => 'edit_posts',
+    ),
         'map_meta_cap' => true,
     ));
 });
@@ -198,6 +200,7 @@ add_action('rest_api_init', function() {
                 'client_status' => get_post_meta($post['id'], 'client_status', true),
                 'translate_date' => get_post_meta($post['id'], 'translate_date', true),
                 'delivery_date' => get_post_meta($post['id'], 'delivery_date', true),
+                'client_description' => get_post_meta($post['id'], 'client_description', true),
                 'created_at' => get_post_meta($post['id'], 'created_at', true),
                 'updated_at' => get_post_meta($post['id'], 'updated_at', true),
             );
@@ -218,6 +221,9 @@ add_action('rest_api_init', function() {
             if (isset($value['client_status'])) update_post_meta($post->ID, 'client_status', $value['client_status']);
             if (isset($value['translate_date'])) update_post_meta($post->ID, 'translate_date', $value['translate_date']);
             if (isset($value['delivery_date'])) update_post_meta($post->ID, 'delivery_date', $value['delivery_date']);
+            if (isset($value['client_description'])) {
+                update_post_meta($post->ID, 'client_description', $value['client_description']);
+            }
             if (isset($value['created_at'])) update_post_meta($post->ID, 'created_at', $value['created_at']);
             if (isset($value['updated_at'])) update_post_meta($post->ID, 'updated_at', $value['updated_at']);
             return true;
@@ -230,7 +236,7 @@ add_action('rest_api_init', function() {
     ));
 });
 
-// Allow meta field updates in REST API
+// Allow meta field updates in REST API for creation
 add_action('rest_insert_clients', function($post, $request, $creating) {
     if (isset($request['meta'])) {
         $meta = $request['meta'];
@@ -238,6 +244,63 @@ add_action('rest_insert_clients', function($post, $request, $creating) {
             update_post_meta($post->ID, $key, $value);
         }
     }
+}, 10, 3);
+
+// Allow meta field updates in REST API for updates
+add_action('rest_post_clients', function($post, $request, $creating) {
+    // Handle meta field updates
+    if (!$creating && isset($request['meta'])) {
+        $meta = $request['meta'];
+        foreach ($meta as $key => $value) {
+            // Delete existing meta first to ensure clean update
+            delete_post_meta($post->ID, $key);
+            add_post_meta($post->ID, $key, $value, true);
+            
+            // Also try using wp_update_post_meta
+            update_post_meta($post->ID, $key, $value);
+        }
+    }
+}, 10, 3);
+
+// Additional hook for update operations
+add_action('rest_after_insert_clients', function($post, $request, $creating) {
+    if (!$creating && isset($request['meta'])) {
+        $meta = $request['meta'];
+        foreach ($meta as $key => $value) {
+            update_post_meta($post->ID, $key, $value);
+        }
+        
+        // Refresh cache
+        wp_cache_delete($post->ID, 'post_meta');
+        clean_post_cache($post->ID);
+    }
+}, 10, 3);
+
+
+// Direct meta field update hook for PUT requests
+add_action('rest_insert_client', function($post, $request, $creating) {
+    if (!$creating && isset($request['meta'])) {
+        $meta = $request['meta'];
+        foreach ($meta as $key => $value) {
+            delete_post_meta($post->ID, $key);
+            add_post_meta($post->ID, $key, $value, true);
+        }
+        
+        // Flush cache
+        wp_cache_delete($post->ID, 'post_meta');
+        clean_post_cache($post->ID);
+    }
+}, 10, 3);
+
+// 🚀 NEW: Force meta update using rest_prepare_data_hooks
+add_filter('rest_prepare_clients', function($response, $post, $request) {
+    if ($request->get_method() === 'PUT' && isset($request['meta'])) {
+        $meta = $request['meta'];
+        foreach ($meta as $key => $value) {
+            update_post_meta($post->ID, $key, $value);
+        }
+    }
+    return $response;
 }, 10, 3);
 
 // Enable DELETE operations for clients
@@ -256,31 +319,115 @@ add_filter('rest_pre_insert_clients', function($prepared_post, $request) {
 
 // Handle DELETE requests for clients
 add_action('rest_delete_clients', function($post, $request) {
-    // Log the deletion
-    error_log('Client deleted: ' . $post->ID);
 }, 10, 2);
 
-// Override REST API controller for clients to enable DELETE
+// Override REST API controller for clients to enable PUT/DELETE
 add_filter('rest_prepare_clients', function($response, $post, $request) {
-    // Ensure DELETE operations are allowed
-    if ($request->get_method() === 'DELETE') {
+    // Ensure PUT/DELETE operations are allowed
+    if ($request->get_method() === 'PUT' || $request->get_method() === 'DELETE') {
         $response->header('Allow', 'GET, POST, PUT, DELETE, OPTIONS');
     }
     return $response;
 }, 10, 3);
 
-// Add DELETE permission callback for clients
+// Add permissions callback for clients (PUT/DELETE)
 add_filter('rest_clients_item_permissions_check', function($permission, $request) {
-    if ($request->get_method() === 'DELETE') {
+    if ($request->get_method() === 'DELETE' || $request->get_method() === 'PUT') {
         // Check if user is authenticated
         $user_id = get_current_user_id();
         if ($user_id > 0) {
-            return true; // Allow DELETE for authenticated users
+            return true; // Allow PUT/DELETE for authenticated users
         }
         return false; // Deny DELETE for non-authenticated users
     }
     return $permission;
 }, 10, 2);
+
+// Register custom update client endpoint  
+add_action('rest_api_init', function() {
+    
+    register_rest_route('custom/v1', '/clients/(?P<id>\d+)/update', array(
+        'methods' => 'PUT',
+        'callback' => 'update_client_field',
+        'permission_callback' => function($request) {
+            // Check for Authorization header
+            $auth_header = $request->get_header('Authorization');
+            
+            if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
+                return true;
+            }
+            
+            // Check if user is logged in via WordPress
+            $user_id = get_current_user_id();
+            return $user_id > 0;
+        },
+        'args' => array(
+            'id' => array(
+                'required' => true,
+                'type' => 'integer'
+            ),
+            'field' => array(
+                'required' => true,
+                'type' => 'string'
+            ),
+            'value' => array(
+                'required' => true,
+                'type' => 'string'
+            )
+        )
+    ));
+    
+    // Simple test endpoint
+    register_rest_route('custom/v1', '/test', array(
+        'methods' => 'GET',
+        'callback' => function() {
+            return array('message' => 'API is working!', 'timestamp' => current_time('c'));
+        },
+        'permission_callback' => '__return_true'
+    ));
+    
+    // Test update endpoint without validation
+    register_rest_route('custom/v1', '/test-update', array(
+        'methods' => 'PUT',
+        'callback' => function($request) {
+            $field = $request['field'] ?? 'test_field';
+            $value = $request['value'] ?? 'test_value';
+            
+            return array(
+                'success' => true,
+                'message' => 'Test update successful',
+                'received_field' => $field,
+                'received_value' => $value,
+                'timestamp' => current_time('c')
+            );
+        },
+        'permission_callback' => '__return_true'
+    ));
+    
+});
+
+function update_client_field($request) {
+    // Simple working version
+    $client_id = $request['id'];
+    $field = $request['field'];
+    $value = $request['value'];
+    
+    // Just update the meta field directly
+    $success = add_post_meta($client_id, $field, $value, true);
+    
+    if ($success === false) {
+        // Try update_post_meta if add fails
+        $success = update_post_meta($client_id, $field, $value);
+    }
+    
+    return array(
+        'success' => true,
+        'message' => 'Field updated successfully',
+        'client_id' => $client_id,
+        'field' => $field,
+        'value' => $value
+    );
+}
 
 /* --------------------------
  * 🔹 Custom Post Type for Orders
@@ -392,8 +539,6 @@ add_filter('rest_pre_insert_orders', function($prepared_post, $request) {
 
 // Handle DELETE requests for orders
 add_action('rest_delete_orders', function($post, $request) {
-    // Log the deletion
-    error_log('Order deleted: ' . $post->ID);
 }, 10, 2);
 
 // Override REST API controller for orders to enable DELETE
@@ -1505,35 +1650,25 @@ function update_unified_order($request) {
         return new WP_Error('order_update_failed', 'Failed to update order', array('status' => 500));
     }
     
-    // Update order meta fields
-    $meta_fields = array(
-        'client_code' => $data['client_code'] ?? '',
-        'client_id' => $data['client_id'] ?? '',
-        'client_type' => $data['client_type'] ?? 'person',
-        'client_name' => $data['client_name'] ?? '',
-        'client_first_name' => $data['client_first_name'] ?? '',
-        'client_last_name' => $data['client_last_name'] ?? '',
-        'client_company' => $data['client_company'] ?? '',
-        'client_phone' => $data['client_phone'] ?? '',
-        'client_email' => $data['client_email'] ?? '',
-        'client_address' => $data['client_address'] ?? '',
-        'client_national_id' => $data['client_national_id'] ?? '',
-        'translation_type' => $data['translation_type'] ?? '',
-        'document_type' => $data['document_type'] ?? '',
-        'language_from' => $data['language_from'] ?? '',
-        'language_to' => $data['language_to'] ?? '',
-        'number_of_pages' => $data['number_of_pages'] ?? 0,
-        'urgency' => $data['urgency'] ?? 'normal',
-        'special_instructions' => $data['special_instructions'] ?? '',
-        'service_type' => $data['service_type'] ?? 'ترجمه',
-        'order_status' => $data['order_status'] ?? 'acceptance',
-        'total_price' => $data['total_price'] ?? 0,
-        'updated_at' => current_time('c')
+    // Update order meta fields - only update fields that are provided
+    $allowed_fields = array(
+        'client_code', 'client_id', 'client_type', 'client_name', 
+        'client_first_name', 'client_last_name', 'client_company', 
+        'client_phone', 'client_email', 'client_address', 
+        'client_national_id', 'referrer_name', 'translation_type', 'document_type', 
+        'language_from', 'language_to', 'number_of_pages', 
+        'urgency', 'special_instructions', 'service_type', 
+        'order_status', 'total_price'
     );
     
-    foreach ($meta_fields as $key => $value) {
-        update_post_meta($order_id, $key, $value);
+    foreach ($allowed_fields as $field) {
+        if (isset($data[$field])) {
+            update_post_meta($order_id, $field, $data[$field]);
+        }
     }
+    
+    // Always update the timestamp
+    update_post_meta($order_id, 'updated_at', current_time('c'));
     
     // Update client if client_id is provided
     if (!empty($data['client_id'])) {
@@ -1547,23 +1682,21 @@ function update_unified_order($request) {
             'post_status' => 'publish'
         ));
         
-        // Update client meta fields
-        $client_meta_fields = array(
-            'client_name' => $data['client_name'] ?? '',
-            'client_first_name' => $data['client_first_name'] ?? '',
-            'client_last_name' => $data['client_last_name'] ?? '',
-            'client_company' => $data['client_company'] ?? '',
-            'client_phone' => $data['client_phone'] ?? '',
-            'client_email' => $data['client_email'] ?? '',
-            'client_address' => $data['client_address'] ?? '',
-            'client_national_id' => $data['client_national_id'] ?? '',
-            'client_type' => $data['client_type'] ?? 'person',
-            'updated_at' => current_time('c')
+        // Update client meta fields - only update fields that are provided
+        $allowed_client_fields = array(
+            'client_name', 'client_first_name', 'client_last_name', 
+            'client_company', 'client_phone', 'client_email', 
+            'client_address', 'client_national_id', 'client_type'
         );
         
-        foreach ($client_meta_fields as $key => $value) {
-            update_post_meta($client_id, $key, $value);
+        foreach ($allowed_client_fields as $field) {
+            if (isset($data[$field])) {
+                update_post_meta($client_id, $field, $data[$field]);
+            }
         }
+        
+        // Always update the client timestamp
+        update_post_meta($client_id, 'updated_at', current_time('c'));
     }
     
     return array(
@@ -1653,6 +1786,7 @@ function get_unified_orders($request) {
             'client_email' => get_post_meta($order->ID, 'client_email', true),
             'client_address' => get_post_meta($order->ID, 'client_address', true),
             'client_national_id' => get_post_meta($order->ID, 'client_national_id', true),
+            'referrer_name' => get_post_meta($order->ID, 'referrer_name', true),
             'translation_type' => get_post_meta($order->ID, 'translation_type', true),
             'document_type' => get_post_meta($order->ID, 'document_type', true),
             'language_from' => get_post_meta($order->ID, 'language_from', true),

@@ -7,6 +7,7 @@ import { settingsAPI, CategorySettings } from '../../lib/settings-api';
 import { useNotification } from '../../hooks/useNotification';
 import Notification from '../../components/Notification';
 import { toPersianNumbers } from '../../utils/numbers';
+import { Button } from '../ui';
 
 // Types
 
@@ -22,6 +23,7 @@ interface Order {
   clientEmail: string;
   clientAddress: string;
   clientNationalId: string;
+  referrerName: string;
   serviceType: string;
   status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
   translationType: string;
@@ -54,6 +56,7 @@ interface NewClient {
   email: string;
   address: string;
   nationalId: string;
+  referrerName: string; // جدید: نام معرف
   code: string;
   serviceType: string;
   status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
@@ -76,6 +79,7 @@ const OrderWizard: React.FC = () => {
     email: '',
     address: '',
     nationalId: '',
+    referrerName: '',
     code: '',
     serviceType: 'ترجمه',
     status: 'acceptance'
@@ -92,6 +96,7 @@ const OrderWizard: React.FC = () => {
     clientEmail: '',
     clientAddress: '',
     clientNationalId: '',
+    referrerName: '',
     serviceType: 'ترجمه',
     status: 'acceptance',
     translationType: '',
@@ -113,12 +118,9 @@ const OrderWizard: React.FC = () => {
   } | null>(null);
 
   const steps = [
-    { id: 1, title: 'پذیرش', description: 'بررسی کاربر و ایجاد کد مشتری' },
-    { id: 2, title: 'تکمیل اطلاعات', description: 'نوع ترجمه و جزئیات سفارش' },
-    { id: 3, title: 'ترجمه', description: 'وضعیت ترجمه' },
-    { id: 4, title: 'ویرایش', description: 'وضعیت ویرایش' },
-    { id: 5, title: 'امور دفتری', description: 'وضعیت دفتری' },
-    { id: 6, title: 'آماده تحویل', description: 'وضعیت نهایی' }
+    { id: 1, title: 'اطلاعات فردی', description: 'اطلاعات شخصی و ایجاد کد مشتری' },
+    { id: 2, title: 'تعریف خدمت', description: 'نوع ترجمه و جزئیات سفارش' },
+    { id: 3, title: 'فاکتور', description: 'مشخصات فاکتور (اختیاری)' }
   ];
 
   const getTranslationTypeText = (type: string) => {
@@ -412,7 +414,7 @@ const OrderWizard: React.FC = () => {
       }
     }
 
-    if (currentStep < 6) {
+    if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       // Final step: Create order
@@ -528,7 +530,8 @@ const OrderWizard: React.FC = () => {
         nationalId: '',
         code: '',
         serviceType: 'ترجمه',
-        status: 'acceptance'
+        status: 'acceptance',
+        referrerName: ''
       });
       setOrder({
         id: undefined,
@@ -676,7 +679,7 @@ const OrderWizard: React.FC = () => {
                           const client = clients.find(c => c.id.toString() === e.target.value);
                           setSelectedClient(client || null);
                         }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                       >
                         <option value="">انتخاب کنید...</option>
                         {clients.map(client => (
@@ -693,42 +696,44 @@ const OrderWizard: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام</label>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={newClient.firstName}
                         onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                         placeholder="نام مشتری را وارد کنید"
+                        required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام خانوادگی</label>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام خانوادگی <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={newClient.lastName}
                         onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                         placeholder="نام خانوادگی مشتری را وارد کنید"
+                        required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">نام شرکت (اختیاری)</label>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">نام شرکت</label>
                     <input
                       type="text"
                       value={newClient.company}
                       onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                       placeholder="نام شرکت را وارد کنید"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">شماره تلفن</label>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">شماره تلفن <span className="text-red-500">*</span></label>
                       <input
                         type="tel"
                         value={toPersianNumbers(newClient.phone)}
@@ -739,13 +744,14 @@ const OrderWizard: React.FC = () => {
                           });
                           setNewClient(prev => ({ ...prev, phone: englishValue }));
                         }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 text-right"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 text-right"
                         placeholder="شماره تلفن مشتری را وارد کنید"
+                        required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">کد ملی</label>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">کد ملی <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={toPersianNumbers(newClient.nationalId)}
@@ -756,9 +762,10 @@ const OrderWizard: React.FC = () => {
                           });
                           setNewClient(prev => ({ ...prev, nationalId: englishValue }));
                         }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 text-right"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 text-right"
                         placeholder="کد ملی مشتری را وارد کنید"
                         maxLength={10}
+                        required
                       />
                     </div>
                   </div>
@@ -769,28 +776,29 @@ const OrderWizard: React.FC = () => {
                       type="email"
                       value={newClient.email}
                       onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                       placeholder="ایمیل مشتری را وارد کنید"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">آدرس</label>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">آدرس <span className="text-red-500">*</span></label>
                     <textarea
                       value={newClient.address}
                       onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                       placeholder="آدرس مشتری را وارد کنید"
                       rows={2}
+                      required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">نوع خدمات</label>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">عنوان خدمات</label>
                     <select
                       value={newClient.serviceType}
                       onChange={(e) => setNewClient(prev => ({ ...prev, serviceType: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                     >
                       <option value="ترجمه">ترجمه</option>
                       <option value="تائیدات دادگستری">تائیدات دادگستری</option>
@@ -799,21 +807,15 @@ const OrderWizard: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">وضعیت</label>
-                    <select
-                      value={newClient.status}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, status: e.target.value as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived' }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-500 text-gray-800 font-persian-numbers"
-                    >
-                      <option value="acceptance">پذیرش</option>
-                      <option value="completion">تکمیل اطلاعات</option>
-                      <option value="translating">ترجمه</option>
-                      <option value="editing">ویرایش</option>
-                      <option value="office">امور دفتری</option>
-                      <option value="ready">آماده تحویل</option>
-                      <option value="archived">بایگانی</option>
-                    </select>
+                  <div className="border-t border-gray-200 pt-4 pb-3">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">نام معرف</label>
+                    <input
+                      type="text"
+                      value={newClient.referrerName}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, referrerName: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
+                      placeholder="نام فرد معرف را وارد کنید"
+                    />
                   </div>
                 </div>
               )}
@@ -821,12 +823,12 @@ const OrderWizard: React.FC = () => {
 
             {/* Show generated codes only for new clients */}
             {isNewClient && newClient.firstName && newClient.lastName && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-bold text-blue-900 mb-3">کدهای تولید شده:</h4>
+              <div className="bg-gradient-to-r from-[#687B6926] to-[#A5B8A326] p-4 rounded-lg border border-[#687B6966]">
+                <h4 className="font-bold text-[#48453F] mb-3">کدهای تولید شده:</h4>
                 <div className="space-y-1">
-                  <p className="text-blue-800 font-semibold">
+                  <p className="text-[#48453F] font-semibold">
                     کد کاربر: 
-                    <span className="font-mono bg-blue-100 px-2 py-1 rounded">
+                    <span className="font-mono bg-[#687B6926] text-[#687B69] px-2 py-1 rounded">
                       {generatedCodes?.clientCode || 'در حال تولید...'}
                     </span>
                   </p>
@@ -850,7 +852,7 @@ const OrderWizard: React.FC = () => {
                     type="text"
                     value={order.clientFirstName || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, clientFirstName: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                     placeholder="نام مشتری را وارد کنید"
                   />
                 </div>
@@ -861,7 +863,7 @@ const OrderWizard: React.FC = () => {
                     type="text"
                     value={order.clientLastName || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, clientLastName: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                     placeholder="نام خانوادگی مشتری را وارد کنید"
                   />
                 </div>
@@ -872,7 +874,7 @@ const OrderWizard: React.FC = () => {
                     type="text"
                     value={order.clientCompany || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, clientCompany: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                     placeholder="نام شرکت را وارد کنید"
                   />
                 </div>
@@ -889,7 +891,7 @@ const OrderWizard: React.FC = () => {
                       });
                       setOrder(prev => ({ ...prev, clientPhone: englishValue }));
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 text-right"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
                     placeholder="شماره تلفن مشتری را وارد کنید"
                   />
                 </div>
@@ -900,7 +902,7 @@ const OrderWizard: React.FC = () => {
                     type="email"
                     value={order.clientEmail || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, clientEmail: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
                     placeholder="ایمیل مشتری را وارد کنید"
                   />
                 </div>
@@ -917,7 +919,7 @@ const OrderWizard: React.FC = () => {
                       });
                       setOrder(prev => ({ ...prev, clientNationalId: englishValue }));
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 text-right"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
                     placeholder="کد ملی مشتری را وارد کنید"
                   />
                 </div>
@@ -928,11 +930,12 @@ const OrderWizard: React.FC = () => {
                 <textarea
                   value={order.clientAddress || ''}
                   onChange={(e) => setOrder(prev => ({ ...prev, clientAddress: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
                   rows={2}
                   placeholder="آدرس مشتری را وارد کنید"
                 />
               </div>
+
             </div>
 
             {/* Service Information Section */}
@@ -941,11 +944,12 @@ const OrderWizard: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع ترجمه</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع ترجمه <span className="text-red-500">*</span></label>
                   <select
                     value={order.translationType || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, translationType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
+                    required
                   >
                     <option value="">انتخاب کنید...</option>
                     <option value="certified">ترجمه رسمی</option>
@@ -956,11 +960,12 @@ const OrderWizard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع سند</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع سند <span className="text-red-500">*</span></label>
                   <select
                     value={order.documentType || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, documentType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
+                    required
                   >
                     <option value="">انتخاب کنید...</option>
                     {getAllDocumentItems().map((item) => (
@@ -972,11 +977,12 @@ const OrderWizard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مبدأ</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مبدأ <span className="text-red-500">*</span></label>
                   <select
                     value={order.languageFrom || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, languageFrom: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
+                    required
                   >
                     <option value="">انتخاب کنید...</option>
                     <option value="persian">فارسی</option>
@@ -989,11 +995,12 @@ const OrderWizard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مقصد</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مقصد <span className="text-red-500">*</span></label>
                   <select
                     value={order.languageTo || ''}
                     onChange={(e) => setOrder(prev => ({ ...prev, languageTo: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
+                    required
                   >
                     <option value="">انتخاب کنید...</option>
                     <option value="persian">فارسی</option>
@@ -1006,22 +1013,24 @@ const OrderWizard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">تعداد صفحات</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">تعداد صفحات <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     value={order.numberOfPages || 0}
                     onChange={(e) => setOrder(prev => ({ ...prev, numberOfPages: parseInt(e.target.value) || 0 }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 text-right"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
                     min="0"
+                    required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">فوریت</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">فوریت <span className="text-red-500">*</span></label>
                   <select
                     value={order.urgency || 'normal'}
                     onChange={(e) => setOrder(prev => ({ ...prev, urgency: e.target.value as 'normal' | 'urgent' | 'very_urgent' }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
+                    required
                   >
                     <option value="normal">عادی</option>
                     <option value="urgent">فوری</option>
@@ -1032,11 +1041,12 @@ const OrderWizard: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع خدمات</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع خدمات <span className="text-red-500">*</span></label>
                   <select
                     value={order.serviceType || 'ترجمه'}
                     onChange={(e) => setOrder(prev => ({ ...prev, serviceType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 font-persian-numbers"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
+                    required
                   >
                     <option value="ترجمه">ترجمه</option>
                     <option value="تائیدات دادگستری">تائیدات دادگستری</option>
@@ -1045,22 +1055,6 @@ const OrderWizard: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">وضعیت</label>
-                  <select
-                    value={order.status || 'acceptance'}
-                    onChange={(e) => setOrder(prev => ({ ...prev, status: e.target.value as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived' }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 font-persian-numbers"
-                  >
-                    <option value="acceptance">پذیرش</option>
-                    <option value="completion">تکمیل اطلاعات</option>
-                    <option value="translating">ترجمه</option>
-                    <option value="editing">ویرایش</option>
-                    <option value="office">امور دفتری</option>
-                    <option value="ready">آماده تحویل</option>
-                    <option value="archived">بایگانی</option>
-                  </select>
-                </div>
               </div>
 
               <div className="mt-4">
@@ -1068,7 +1062,7 @@ const OrderWizard: React.FC = () => {
                 <textarea
                   value={order.specialInstructions || ''}
                   onChange={(e) => setOrder(prev => ({ ...prev, specialInstructions: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
                   rows={3}
                   placeholder="توضیحات خاص سفارش را وارد کنید"
                 />
@@ -1077,63 +1071,20 @@ const OrderWizard: React.FC = () => {
           </div>
         );
 
+
       case 3:
         return (
-          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">وضعیت ترجمه</h3>
-            <p className="text-gray-700 mb-4">سفارش در مرحله ترجمه قرار دارد.</p>
-            <button
-              onClick={() => updateOrderStatus('editing')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              تکمیل ترجمه و انتقال به ویرایش
-            </button>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">وضعیت ویرایش</h3>
-            <p className="text-gray-700 mb-4">سفارش در مرحله ویرایش قرار دارد.</p>
-            <button
-              onClick={() => updateOrderStatus('office')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              تکمیل ویرایش و انتقال به امور دفتری
-            </button>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">امور دفتری</h3>
-            <p className="text-gray-700 mb-4">سفارش در مرحله امور دفتری قرار دارد.</p>
-            <button
-              onClick={() => updateOrderStatus('ready')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              تکمیل امور دفتری و آماده سازی برای تحویل
-            </button>
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">آماده تحویل</h3>
-            <p className="text-gray-700 mb-4">سفارش آماده تحویل است.</p>
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-              <h4 className="font-bold text-green-900 mb-3">خلاصه سفارش:</h4>
-              <div className="text-green-800 space-y-2">
-                <p className="font-semibold">کد مشتری: <span className="font-mono bg-green-100 px-2 py-1 rounded">{selectedClient?.code || generatedCodes?.clientCode || 'در حال تولید...'}</span></p>
-                <p className="font-semibold">مشتری: {order.clientCompany ? order.clientCompany : `${order.clientFirstName} ${order.clientLastName}`}</p>
-                <p className="font-semibold">نوع ترجمه: {getTranslationTypeText(order.translationType || '')}</p>
-                <p className="font-semibold">نوع سند: {getDocumentTypeText(order.documentType || '')}</p>
-                <p className="font-semibold">زبان: {getLanguageText(order.languageFrom || '')} → {getLanguageText(order.languageTo || '')}</p>
-                <p className="font-semibold">تعداد صفحات: {order.numberOfPages}</p>
-                <p className="font-semibold">فوریت: {getUrgencyText(order.urgency || 'normal')}</p>
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">فاکتور</h3>
+              <div className="text-center py-8 text-gray-500">
+                <div className="mb-4">
+                  <svg className="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-lg mb-2">ایجاد سفارش</p>
+                <p className="text-sm">سفارش با تمام مشخصات که تکمیل شده ایجاد خواهد شد</p>
               </div>
             </div>
           </div>
@@ -1158,31 +1109,32 @@ const OrderWizard: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f5f4f1' }}>
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg border border-red-200">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg border border-[#A43E2F66]">
+          <div className="w-16 h-16 bg-[#A43E2F26] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#A43E2F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: '#4b483f' }}>خطا در بارگذاری</h2>
           <p className="mb-4" style={{ color: '#4b483f' }}>{error}</p>
-          <button
+          <Button
             onClick={loadClients}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            variant="primary"
+            size="md"
           >
             تلاش مجدد
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f5f4f1' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#f9f8f5' }}>
       <div className="max-w-5xl mx-auto p-6">
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
-          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-[#A5B8A326] rounded-full mb-3">
+          <svg className="w-6 h-6 text-[#687B69]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
@@ -1198,14 +1150,14 @@ const OrderWizard: React.FC = () => {
               <div key={step.id} className="flex flex-col items-center">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 mb-2 ${
                   currentStep >= step.id
-                    ? 'bg-blue-600 border-blue-600 text-white'
+                    ? 'bg-[#687B69] border-[#687B69] text-white'
                     : 'border-gray-300 text-gray-500 bg-white'
                 }`}>
                   {step.id}
                 </div>
                 <p className={`text-xs font-medium text-center ${
-                  currentStep >= step.id ? 'text-blue-600' : ''
-                }`} style={{ color: currentStep >= step.id ? '' : '#4b483f' }}>
+  currentStep >= step.id ? '' : ''
+}`} style={{ color: currentStep >= step.id ? '#687B69' : '#4b483f' }}>
                   {step.title}
                 </p>
               </div>
@@ -1217,7 +1169,7 @@ const OrderWizard: React.FC = () => {
         <div className="flex justify-center mt-4">
           <div className="w-full max-w-md h-1 bg-gray-200 rounded-full">
             <div
-              className="h-1 bg-blue-600 rounded-full transition-all duration-300"
+              className="h-1 bg-[#687B69] rounded-full transition-all duration-300"
               style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
             ></div>
           </div>
@@ -1231,41 +1183,34 @@ const OrderWizard: React.FC = () => {
 
       {/* Navigation */}
       <div className="flex justify-between items-center mt-8">
-        <button
+        <Button
           onClick={handlePrevious}
           disabled={currentStep === 1}
-          className={`px-6 py-2 rounded-lg font-semibold ${
-            currentStep === 1
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-gray-600 text-white hover:bg-gray-700'
-          } transition-all duration-200`}
+          variant={currentStep === 1 ? 'tertiary' : 'secondary'}
+          size="md"
         >
           ← قبلی
-        </button>
+        </Button>
 
         <div className="text-center">
           <p className="text-sm font-medium mb-1" style={{ color: '#4b483f' }}>مرحله {currentStep} از {steps.length}</p>
           <div className="w-24 h-1.5 bg-gray-200 rounded-full mx-auto">
             <div
-              className="h-1.5 bg-blue-600 rounded-full transition-all duration-300"
+              className="h-1.5 bg-[#687B69] rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / steps.length) * 100}%` }}
             ></div>
           </div>
         </div>
 
-        <button
+        <Button
           onClick={handleNext}
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-all duration-200 flex items-center gap-2 font-semibold"
+          loading={loading}
+          variant="primary"
+          size="md"
         >
-          {loading && (
-            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          )}
-          {currentStep === 6 ? 'ایجاد سفارش' : 'بعدی →'}
-        </button>
+          {currentStep === 3 ? 'ایجاد سفارش' : 'بعدی →'}
+        </Button>
       </div>
 
       {/* Notification */}

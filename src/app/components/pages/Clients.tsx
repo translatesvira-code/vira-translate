@@ -111,27 +111,27 @@ const Clients: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'acceptance': return 'bg-blue-100 text-blue-800 border border-blue-200';
-      case 'completion': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
-      case 'translating': return 'bg-orange-100 text-orange-800 border border-orange-200';
-      case 'editing': return 'bg-purple-100 text-purple-800 border border-purple-200';
-      case 'office': return 'bg-pink-100 text-pink-800 border border-pink-200';
-      case 'ready': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'archived': return 'bg-gray-100 text-gray-800 border border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border border-gray-200';
+      case 'acceptance': return 'bg-[#687B6926] text-[#687B69] border border-[#687B6966]';
+      case 'completion': return 'bg-[#2B593E26] text-[#2B593E] border border-[#2B593E66]';
+      case 'translating': return 'bg-[#A43E2F26] text-[#A43E2F] border border-[#A43E2F66]';
+      case 'editing': return 'bg-[#A5B8A326] text-[#A5B8A3] border border-[#A5B8A366]';
+      case 'office': return 'bg-[#6A7B7E26] text-[#6A7B7E] border border-[#6A7B7E66]';
+      case 'ready': return 'bg-[#2B593E26] text-[#2B593E] border border-[#2B593E66]';
+      case 'archived': return 'bg-[#C0B8AC26] text-[#656051] border border-[#C0B8AC66]';
+      default: return 'bg-[#C0B8AC26] text-[#656051] border border-[#C0B8AC66]';
     }
   };
 
   const getStatusTextColor = (status: string) => {
     switch (status) {
-      case 'acceptance': return 'text-blue-800 border-blue-300 hover:bg-blue-50';
-      case 'completion': return 'text-indigo-800 border-indigo-300 hover:bg-indigo-50';
-      case 'translating': return 'text-orange-800 border-orange-300 hover:bg-orange-50';
-      case 'editing': return 'text-purple-800 border-purple-300 hover:bg-purple-50';
-      case 'office': return 'text-pink-800 border-pink-300 hover:bg-pink-50';
-      case 'ready': return 'text-yellow-800 border-yellow-300 hover:bg-yellow-50';
-      case 'archived': return 'text-gray-800 border-gray-300 hover:bg-gray-50';
-      default: return 'text-gray-800 border-gray-300 hover:bg-gray-50';
+      case 'acceptance': return 'text-[#687B69] border-[#687B6966] hover:bg-[#687B6926]';
+      case 'completion': return 'text-[#2B593E] border-[#2B593E66] hover:bg-[#2B593E26]';
+      case 'translating': return 'text-[#A43E2F] border-[#A43E2F66] hover:bg-[#A43E2F26]';
+      case 'editing': return 'text-[#A5B8A3] border-[#A5B8A366] hover:bg-[#A5B8A326]';
+      case 'office': return 'text-[#6A7B7E] border-[#6A7B7E66] hover:bg-[#6A7B7E26]';
+      case 'ready': return 'text-[#2B593E] border-[#2B593E66] hover:bg-[#2B593E26]';
+      case 'archived': return 'text-[#656051] border-[#C0B8AC66] hover:bg-[#C0B8AC26]';
+      default: return 'text-[#656051] border-[#C0B8AC66] hover:bg-[#C0B8AC26]';
     }
   };
 
@@ -252,7 +252,7 @@ const Clients: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
+      <div className="min-h-screen p-8" style={{ backgroundColor: '#f9f8f5' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-semibold text-gray-800">مراجعین</h1>
@@ -282,8 +282,8 @@ const Clients: React.FC = () => {
               }}
               className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors cursor-pointer ${
                 selectedStatus === null
-                  ? 'bg-gray-800 text-white border-gray-800'
-                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ? 'bg-[#48453F] text-white border-[#48453F]'
+                  : 'text-[#656051] border-[#C0B8AC66] hover:bg-[#E4D8C726]'
               }`}
             >
               همه
@@ -318,7 +318,7 @@ const Clients: React.FC = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-64 placeholder-gray-600 text-gray-900"
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] w-64 placeholder-gray-600 text-gray-900"
               />
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                 <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +380,7 @@ const Clients: React.FC = () => {
                         <div className="flex items-center justify-start gap-1">
                           <button 
                             onClick={() => handleDeleteClient(client)}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                            className="bg-[#A43E2F26] hover:bg-[#A43E2F40] text-[#A43E2F] p-2 rounded-lg transition-colors duration-200 cursor-pointer"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -457,7 +457,7 @@ const Clients: React.FC = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2 py-1 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                className="px-2 py-1 text-xs font-medium text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#687B69] focus:border-[#687B69] cursor-pointer"
               >
                 <option value={5}>{toPersianNumbers(5)}</option>
                 <option value={10}>{toPersianNumbers(10)}</option>
@@ -504,14 +504,14 @@ const Clients: React.FC = () => {
                   {clientToDelete.name} - {clientToDelete.code}
                 </p>
               )}
-              <p className="text-sm text-red-600 mt-2">این عمل قابل بازگشت نیست.</p>
+              <p className="text-sm text-[#A43E2F] mt-2">این عمل قابل بازگشت نیست.</p>
             </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleConfirmDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
+                className="flex-1 bg-[#A43E2F] hover:bg-[#A43E2F] text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
               >
                 بله، حذف کن
               </button>
