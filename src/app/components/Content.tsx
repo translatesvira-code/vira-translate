@@ -3,10 +3,11 @@
 import React from 'react';
 import { useTab } from '../context/TabContext';
 import Clients from './pages/Clients';
-import Users from './pages/Users';
+import Archive from './pages/Archive';
 import Financial from './pages/Financial';
 import Settings from './pages/Settings';
 import ClientProfile from './pages/ClientProfile';
+import OrderWizard from './pages/OrderWizard';
 
 const Content: React.FC = () => {
   const { activeTab, clientProfileName } = useTab();
@@ -15,14 +16,16 @@ const Content: React.FC = () => {
     switch (activeTab) {
       case 'clients':
         return <Clients />;
-      case 'users':
-        return <Users />;
+      case 'archive':
+        return <Archive />;
       case 'financial':
         return <Financial />;
       case 'settings':
         return <Settings />;
       case 'client-profile':
         return <ClientProfile clientName={clientProfileName || ''} />;
+      case 'order-wizard':
+        return <OrderWizard />;
       default:
         return <Clients />;
     }

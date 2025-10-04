@@ -1,9 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
-export type TabType = 'clients' | 'users' | 'financial' | 'settings' | 'client-profile';
+export type TabType = 'order-wizard' | 'clients' | 'archive' | 'financial' | 'settings' | 'client-profile';
 
 interface TabContextType {
   activeTab: TabType;
@@ -27,9 +27,9 @@ interface TabProviderProps {
 }
 
 export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
-  const router = useRouter();
+  // const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('clients');
+  const [activeTab, setActiveTab] = useState<TabType>('order-wizard');
   const [clientProfileName, setClientProfileName] = useState<string | null>(null);
 
   // Read tab from URL on mount
@@ -37,7 +37,7 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
     const tab = searchParams.get('tab') as TabType;
     const clientName = searchParams.get('clientName');
     
-    if (tab && ['clients', 'users', 'financial', 'settings', 'client-profile'].includes(tab)) {
+    if (tab && ['order-wizard', 'clients', 'archive', 'financial', 'settings', 'client-profile'].includes(tab)) {
       setActiveTab(tab);
     }
     
@@ -48,17 +48,25 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
 
   const handleSetActiveTab = (tab: TabType) => {
     setActiveTab(tab);
+    // Only update URL without causing page reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
     if (tab === 'client-profile' && clientProfileName) {
-      router.push(`/?tab=${tab}&clientName=${encodeURIComponent(clientProfileName)}`);
+      url.searchParams.set('clientName', clientProfileName);
     } else {
-      router.push(`/?tab=${tab}`);
+      url.searchParams.delete('clientName');
     }
+    window.history.pushState({}, '', url.toString());
   };
 
   const setClientProfile = (clientName: string) => {
     setClientProfileName(clientName);
     setActiveTab('client-profile');
-    router.push(`/?tab=client-profile&clientName=${encodeURIComponent(clientName)}`);
+    // Only update URL without causing page reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', 'client-profile');
+    url.searchParams.set('clientName', clientName);
+    window.history.pushState({}, '', url.toString());
   };
 
   return (

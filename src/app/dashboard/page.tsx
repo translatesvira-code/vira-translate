@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useAuth } from './context/AuthContext';
-import LoginForm from './components/LoginForm';
+import { useEffect } from 'react';
+import { TabProvider } from '../context/TabContext';
+import Sidebar from '../components/Navbar';
+import Content from '../components/Content';
 
-export default function Home() {
+export default function Dashboard() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -27,8 +29,17 @@ export default function Home() {
   }
 
   if (!isAuthenticated) {
-    return <LoginForm />;
+    return null;
   }
 
-  return null;
+  return (
+    <TabProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="mr-64">
+          <Content />
+        </div>
+      </div>
+    </TabProvider>
+  );
 }
