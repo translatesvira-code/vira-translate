@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const LoginForm: React.FC = () => {
-  const [username, setUsername] = useState('masoud');
-  const [password, setPassword] = useState('masoud');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -33,7 +33,7 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f5f4f1' }}>
       <div className="max-w-md w-full space-y-8">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Header */}
@@ -43,8 +43,8 @@ const LoginForm: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">ورود به سیستم</h2>
-            <p className="mt-2 text-sm text-gray-600">لطفاً اطلاعات خود را وارد کنید</p>
+            <h2 className="text-3xl font-bold" style={{ color: '#4b483f' }}>ورود به سیستم</h2>
+            <p className="mt-2 text-sm" style={{ color: '#4b483f' }}>لطفاً اطلاعات خود را وارد کنید</p>
           </div>
 
           {/* Form */}
@@ -56,7 +56,7 @@ const LoginForm: React.FC = () => {
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium mb-2" style={{ color: '#4b483f' }}>
                 نام کاربری یا ایمیل
               </label>
               <input
@@ -73,7 +73,7 @@ const LoginForm: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: '#4b483f' }}>
                 رمز عبور
               </label>
               <input
@@ -107,7 +107,7 @@ const LoginForm: React.FC = () => {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs" style={{ color: '#4b483f' }}>
               پنل مدیریت ویرا ترنسلیت
             </p>
           </div>

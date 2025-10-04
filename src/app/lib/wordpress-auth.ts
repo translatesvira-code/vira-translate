@@ -91,6 +91,22 @@ class WordPressAuth {
       return null;
     }
   }
+
+  async logout(): Promise<boolean> {
+    try {
+      // Clear localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      
+      // In a real app, you might want to call a logout endpoint
+      // to invalidate the token on the server
+      
+      return true;
+    } catch (error) {
+      console.error('Error during logout:', error);
+      return false;
+    }
+  }
 }
 
 export const auth = new WordPressAuth();

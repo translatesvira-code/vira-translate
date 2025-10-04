@@ -2,12 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toPersianNumbers } from '../../utils/numbers';
-import DatePicker from 'react-multi-date-picker';
-import persian from 'react-date-object/calendars/persian';
-import persian_fa from 'react-date-object/locales/persian_fa';
 import { useTab } from '../../context/TabContext';
-import { clientsAPI, Client, UpdateClientData } from '../../lib/clients-api';
-import { Order } from '../../lib/orders-api';
+import { clientsAPI, Client } from '../../lib/clients-api';
+import { UnifiedOrder } from '../../lib/unified-api';
 import { unifiedAPI } from '../../lib/unified-api';
 
 // Client interface is now imported from clients-api
@@ -15,31 +12,31 @@ import { unifiedAPI } from '../../lib/unified-api';
 const Clients: React.FC = () => {
   const { setClientProfile } = useTab();
   const [clients, setClients] = useState<Client[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<UnifiedOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarClosing, setIsSidebarClosing] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [showEditSuccess, setShowEditSuccess] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [isConfirmModalClosing, setIsConfirmModalClosing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleteModalClosing, setIsDeleteModalClosing] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    code: '',
-    serviceType: '',
-    translateDate: '',
-    deliveryDate: '',
-    status: 'accepted' as 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived'
-  });
 
   // Helper functions
+  const getDisplayName = (client: Client) => {
+    // Prioritize company name over personal name
+    if (client.company && client.company.trim() !== '') {
+      return client.company;
+    }
+    
+    // If no company name, use first and last name
+    if (client.firstName && client.lastName) {
+      return `${client.firstName} ${client.lastName}`;
+    }
+    
+    // Fallback to the name field
+    return client.name || 'نامشخص';
+  };
   const handleDeleteClient = (client: Client) => {
     setClientToDelete(client);
     setShowDeleteModal(true);
@@ -98,104 +95,15 @@ const Clients: React.FC = () => {
   };
 
 
-  const handleEditClient = (client: Client) => {
-    setEditingClient(client);
-    setEditForm({
-      name: client.name,
-      code: client.code,
-      serviceType: client.serviceType,
-      translateDate: client.translateDate,
-      deliveryDate: client.deliveryDate,
-      status: client.status
-    });
-    setIsSidebarOpen(true);
-  };
-
-  const handleCloseSidebar = () => {
-    setIsSidebarClosing(true);
-    setTimeout(() => {
-      setIsSidebarOpen(false);
-      setIsSidebarClosing(false);
-      setEditingClient(null);
-    }, 300);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingClient) {
-      setShowConfirmModal(true);
-    }
-  };
-
-  const handleConfirmEdit = async () => {
-    if (editingClient) {
-      try {
-        const updateData: UpdateClientData = {
-          name: editForm.name,
-          code: editForm.code,
-          serviceType: editForm.serviceType,
-          translateDate: editForm.translateDate,
-          deliveryDate: editForm.deliveryDate,
-          status: editForm.status
-        };
-
-        const updatedClient = await clientsAPI.updateClient(editingClient.id, updateData);
-        
-        if (updatedClient) {
-          setClients(prevClients => 
-            prevClients.map(client => 
-              client.id === editingClient.id ? updatedClient : client
-            )
-          );
-        } else {
-          // Fallback to local state update
-          setClients(prevClients => 
-            prevClients.map(client => 
-              client.id === editingClient.id 
-                ? { ...client, ...editForm }
-                : client
-            )
-          );
-        }
-        
-        handleCloseConfirmModal();
-        handleCloseSidebar();
-        setShowEditSuccess(true);
-        
-        setTimeout(() => {
-          setShowEditSuccess(false);
-        }, 5000);
-      } catch (error) {
-        console.error('Error updating client:', error);
-        // Fallback to local state update
-        setClients(prevClients => 
-          prevClients.map(client => 
-            client.id === editingClient.id 
-              ? { ...client, ...editForm }
-              : client
-          )
-        );
-        handleCloseConfirmModal();
-        handleCloseSidebar();
-        setShowEditSuccess(true);
-      }
-    }
-  };
-
-  const handleCloseConfirmModal = () => {
-    setIsConfirmModalClosing(true);
-    setTimeout(() => {
-      setShowConfirmModal(false);
-      setIsConfirmModalClosing(false);
-    }, 300);
-  };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'accepted': return 'پذیرش';
+      case 'acceptance': return 'پذیرش';
+      case 'completion': return 'تکمیل اطلاعات';
       case 'translating': return 'ترجمه';
       case 'editing': return 'ویرایش';
+      case 'office': return 'امور دفتری';
       case 'ready': return 'آماده تحویل';
-      case 'delivered': return 'تحویل شده';
       case 'archived': return 'بایگانی';
       default: return status;
     }
@@ -203,11 +111,12 @@ const Clients: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'accepted': return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'acceptance': return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'completion': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
       case 'translating': return 'bg-orange-100 text-orange-800 border border-orange-200';
       case 'editing': return 'bg-purple-100 text-purple-800 border border-purple-200';
+      case 'office': return 'bg-pink-100 text-pink-800 border border-pink-200';
       case 'ready': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'delivered': return 'bg-green-100 text-green-800 border border-green-200';
       case 'archived': return 'bg-gray-100 text-gray-800 border border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
@@ -215,11 +124,12 @@ const Clients: React.FC = () => {
 
   const getStatusTextColor = (status: string) => {
     switch (status) {
-      case 'accepted': return 'text-blue-800 border-blue-300 hover:bg-blue-50';
+      case 'acceptance': return 'text-blue-800 border-blue-300 hover:bg-blue-50';
+      case 'completion': return 'text-indigo-800 border-indigo-300 hover:bg-indigo-50';
       case 'translating': return 'text-orange-800 border-orange-300 hover:bg-orange-50';
       case 'editing': return 'text-purple-800 border-purple-300 hover:bg-purple-50';
+      case 'office': return 'text-pink-800 border-pink-300 hover:bg-pink-50';
       case 'ready': return 'text-yellow-800 border-yellow-300 hover:bg-yellow-50';
-      case 'delivered': return 'text-green-800 border-green-300 hover:bg-green-50';
       case 'archived': return 'text-gray-800 border-gray-300 hover:bg-gray-50';
       default: return 'text-gray-800 border-gray-300 hover:bg-gray-50';
     }
@@ -264,16 +174,24 @@ const Clients: React.FC = () => {
         id: Number(order.clientId),
         code: order.clientCode,
         name: order.clientName,
+        firstName: order.clientFirstName,
+        lastName: order.clientLastName,
+        company: order.clientCompany,
+        phone: order.clientPhone,
+        email: order.clientEmail,
+        address: order.clientAddress,
+        nationalId: order.clientNationalId,
         serviceType: getTranslationTypeText(order.translationType) || 'ترجمه رسمی',
         translateDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : '',
         deliveryDate: order.status === 'ready' ? new Date(order.updatedAt).toLocaleDateString('fa-IR') : '',
-        status: order.status === 'acceptance' ? 'accepted' as const :
-                order.status === 'completion' ? 'translating' as const :
+        status: order.status === 'acceptance' ? 'acceptance' as const :
+                order.status === 'completion' ? 'completion' as const :
                 order.status === 'translation' ? 'translating' as const :
                 order.status === 'editing' ? 'editing' as const :
-                order.status === 'office' ? 'editing' as const :
+                order.status === 'office' ? 'office' as const :
                 order.status === 'ready' ? 'ready' as const :
-                'accepted' as const
+                order.status === 'archived' ? 'archived' as const :
+                'acceptance' as const
       }));
       
       // Remove duplicates based on client ID
@@ -281,8 +199,11 @@ const Clients: React.FC = () => {
         index === self.findIndex(c => c.id === client.id)
       );
       
-      console.log('✅ Clients created from unified data:', uniqueClients);
-      setClients(uniqueClients);
+      // Filter out archived clients from main clients list
+      const activeClients = uniqueClients.filter(client => client.status !== 'archived');
+      
+      console.log('✅ Clients created from unified data:', activeClients);
+      setClients(activeClients);
     } catch (error) {
       console.error('Error loading data:', error);
       setClients([]);
@@ -316,7 +237,10 @@ const Clients: React.FC = () => {
       client.serviceType.toLowerCase().includes(searchLower) ||
       client.translateDate.includes(searchTerm) ||
       client.deliveryDate.includes(searchTerm) ||
-      getStatusText(client.status).toLowerCase().includes(searchLower);
+      getStatusText(client.status).toLowerCase().includes(searchLower) ||
+      (client.company && client.company.toLowerCase().includes(searchLower)) ||
+      (client.firstName && client.firstName.toLowerCase().includes(searchLower)) ||
+      (client.lastName && client.lastName.toLowerCase().includes(searchLower));
     
     return matchesStatus && matchesSearch;
   });
@@ -328,7 +252,7 @@ const Clients: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
+      <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-semibold text-gray-800">مراجعین</h1>
@@ -344,7 +268,7 @@ const Clients: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-gray-800 mb-4">مراجعین</h1>
@@ -364,7 +288,7 @@ const Clients: React.FC = () => {
             >
               همه
             </button>
-            {['accepted', 'translating', 'editing', 'ready', 'delivered', 'archived'].map((status) => {
+            {['acceptance', 'completion', 'translating', 'editing', 'office', 'ready', 'archived'].map((status) => {
               const count = clients.filter(client => client.status === status).length;
               return (
                 <button
@@ -433,10 +357,10 @@ const Clients: React.FC = () => {
                       <td className="px-6 py-4 text-sm text-gray-800 font-mono">{client.code}</td>
                       <td className="px-6 py-4 text-sm text-gray-800">
                         <button
-                          onClick={() => setClientProfile(client.name)}
+                          onClick={() => setClientProfile(client.code)}
                           className="text-gray-800 hover:text-gray-600 transition-colors duration-200 cursor-pointer"
                         >
-                          {client.name}
+                          {getDisplayName(client)}
                         </button>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-800">{client.serviceType}</td>
@@ -454,14 +378,6 @@ const Clients: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-start gap-1">
-                          <button 
-                            onClick={() => handleEditClient(client)}
-                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
                           <button 
                             onClick={() => handleDeleteClient(client)}
                             className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200 cursor-pointer"
@@ -555,209 +471,6 @@ const Clients: React.FC = () => {
 
 
 
-      {/* Edit Success Message */}
-      {showEditSuccess && (
-        <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            تغییرات با موفقیت اعمال شد
-          </div>
-        </div>
-      )}
-
-      {/* Edit Sidebar */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div 
-            className={`absolute inset-0 backdrop-blur-sm ${
-              isSidebarClosing 
-                ? 'bg-black bg-opacity-0 animate-[fadeOut_0.3s_ease-out_forwards]' 
-                : 'bg-black bg-opacity-0 animate-[fadeIn_0.3s_ease-out_forwards]'
-            }`}
-            onClick={handleCloseSidebar}
-          ></div>
-          
-          {/* Sidebar */}
-          <div className={`w-96 bg-white shadow-xl transform ${
-            isSidebarClosing 
-              ? 'animate-[sidebarSlideOut_0.3s_ease-out_forwards]' 
-              : 'animate-[sidebarSlideIn_0.3s_ease-out_forwards]'
-          }`}>
-            {/* Header */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-800">ویرایش مراجع</h2>
-                <button
-                  onClick={handleCloseSidebar}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="p-6 space-y-4">
-              {/* Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">نام و نام خانوادگی</label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
-                />
-              </div>
-
-              {/* Code Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">کد سفارش</label>
-                <input
-                  type="text"
-                  value={editForm.code}
-                  onChange={(e) => setEditForm({...editForm, code: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
-                />
-              </div>
-
-              {/* Service Type Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">نوع خدمت</label>
-                <select
-                  value={editForm.serviceType}
-                  onChange={(e) => setEditForm({...editForm, serviceType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
-                >
-                  <option value="ترجمه رسمی">ترجمه رسمی</option>
-                  <option value="ترجمه فوری">ترجمه فوری</option>
-                  <option value="ترجمه تخصصی">ترجمه تخصصی</option>
-                  <option value="ترجمه ادبی">ترجمه ادبی</option>
-                  <option value="ترجمه پزشکی">ترجمه پزشکی</option>
-                  <option value="ترجمه حقوقی">ترجمه حقوقی</option>
-                  <option value="ترجمه فنی">ترجمه فنی</option>
-                  <option value="ترجمه بازرگانی">ترجمه بازرگانی</option>
-                </select>
-              </div>
-
-              {/* Translate Date Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">تاریخ ترجمه</label>
-                <DatePicker
-                  value={editForm.translateDate}
-                  onChange={(date) => setEditForm({...editForm, translateDate: date ? date.format() : ''})}
-                  calendar={persian}
-                  locale={persian_fa}
-                  format="YYYY/MM/DD"
-                  placeholder="تاریخ ترجمه را انتخاب کنید"
-                  className="w-full"
-                  inputClass="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                />
-              </div>
-
-              {/* Delivery Date Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">تاریخ تحویل</label>
-                <DatePicker
-                  value={editForm.deliveryDate}
-                  onChange={(date) => setEditForm({...editForm, deliveryDate: date ? date.format() : ''})}
-                  calendar={persian}
-                  locale={persian_fa}
-                  format="YYYY/MM/DD"
-                  placeholder="تاریخ تحویل را انتخاب کنید"
-                  className="w-full"
-                  inputClass="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                />
-              </div>
-
-              {/* Status Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">وضعیت</label>
-                <select
-                  value={editForm.status}
-                  onChange={(e) => setEditForm({...editForm, status: e.target.value as 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived'})}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600"
-                >
-                  <option value="accepted">پذیرش</option>
-                  <option value="translating">ترجمه</option>
-                  <option value="editing">ویرایش</option>
-                  <option value="ready">آماده تحویل</option>
-                  <option value="delivered">تحویل شده</option>
-                  <option value="archived">بایگانی</option>
-                </select>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleSaveEdit}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
-                >
-                  ذخیره تغییرات
-                </button>
-                <button
-                  onClick={handleCloseSidebar}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
-                >
-                  انصراف
-                </button>
-              </div>
-          </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop with blur */}
-          <div className={`absolute inset-0 backdrop-blur-sm ${
-            isConfirmModalClosing 
-              ? 'bg-black bg-opacity-0 animate-[fadeOut_0.3s_ease-out_forwards]' 
-              : 'bg-black bg-opacity-0 animate-[fadeIn_0.3s_ease-out_forwards]'
-          }`}></div>
-          
-          {/* Modal Content */}
-          <div className={`relative bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 transform scale-95 opacity-0 ${
-            isConfirmModalClosing 
-              ? 'animate-[modalOut_0.3s_ease-out_forwards]' 
-              : 'animate-[modalIn_0.3s_ease-out_forwards]'
-          }`}>
-            {/* Modal Title */}
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">تأیید تغییرات</h2>
-
-            {/* Modal Body */}
-            <div className="text-center mb-6">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-                <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <p className="text-gray-600">آیا از اعمال این تغییرات اطمینان دارید؟</p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleConfirmEdit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
-              >
-                بله، اعمال کن
-              </button>
-              <button
-                onClick={handleCloseConfirmModal}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors duration-200 cursor-pointer"
-              >
-                انصراف
-              </button>
-          </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

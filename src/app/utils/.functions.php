@@ -62,10 +62,68 @@ function get_vira_settings() {
                 array('id' => '3', 'name' => 'برابر اصل', 'price' => 0, 'additionType' => 'percentage', 'additionValue' => 0, 'total' => 0)
             ),
             'categories' => array(
-                array('id' => '1', 'name' => 'هویتی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'inquiryPrice' => 0, 'total' => 0),
-                array('id' => '2', 'name' => 'تحصیلی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'inquiryPrice' => 0, 'total' => 0),
-                array('id' => '3', 'name' => 'مالی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'inquiryPrice' => 0, 'total' => 0),
-                array('id' => '4', 'name' => 'پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'inquiryPrice' => 0, 'total' => 0)
+                array('id' => '1', 'name' => 'هویتی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array()),
+                array('id' => '2', 'name' => 'تحصیلی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array()),
+                array('id' => '3', 'name' => 'مالی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array()),
+                array('id' => '4', 'name' => 'پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array(
+                    array('id' => '4-1', 'name' => 'برگه آزمایش پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '4-2', 'name' => 'نسخه پزشک', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '4-3', 'name' => 'گواهی پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '4-4', 'name' => 'گزارش پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '4-5', 'name' => 'گزارش پزشکی قانونی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0)
+                )),
+                array('id' => '5', 'name' => 'اسناد', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array(
+                    array('id' => '5-1', 'name' => 'سند مالکیت تک‌برگی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-2', 'name' => 'سند مالکیت دفترچه‌ای', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-3', 'name' => 'سند وسایل نقلیه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-4', 'name' => 'مبایعه‌نامه/اجاره‌نامه با کد رهگیری', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-5', 'name' => 'مبایعه‌نامه/اجاره‌نامه/صلح‌نامه محضری', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-6', 'name' => 'استعلامات اداره ثبت', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-7', 'name' => 'گزارش ارزیابی و کارشناسی املاک', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-8', 'name' => 'اوراق محضری (تعهدنامه، اقرارنامه، استشهادیه)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-9', 'name' => 'وکالت‌نامه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-10', 'name' => 'اوراق قضائی (حصر وراثت، دادنامه)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-11', 'name' => 'سند نوع ۱', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '5-12', 'name' => 'سند نوع ۲', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0)
+                )),
+                array('id' => '6', 'name' => 'کاری', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array(
+                    array('id' => '6-1', 'name' => 'گواهی اشتغال', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-2', 'name' => 'حکم کارگزینی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-3', 'name' => 'حکم بازنشستگی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-4', 'name' => 'حکم افزایش حقوق', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-5', 'name' => 'حکم اعضای هیئت علمی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-6', 'name' => 'فیش حقوقی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-7', 'name' => 'سابقه بیمه تأمین اجتماعی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-8', 'name' => 'برگه مرخصی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-9', 'name' => 'کارت شناسایی شغلی (کارت بازرگانی، مباشرت، نظام پزشکی)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-10', 'name' => 'پروانه دائم پزشکی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-11', 'name' => 'پروانه وکالت', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-12', 'name' => 'پروانه مهندسی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-13', 'name' => 'پروانه مطب', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-14', 'name' => 'پروانه مسئولیت فنی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-15', 'name' => 'دفترچه وکالت/ کارشناسی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-16', 'name' => 'جواز کسب', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-17', 'name' => 'مدرک شغلی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-18', 'name' => 'گواهی شغلی متفرقه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '6-19', 'name' => 'دفترچه بیمه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0)
+                )),
+                array('id' => '7', 'name' => 'آموزشی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array(
+                    array('id' => '7-1', 'name' => 'کارنامه توصیفی ابتدائی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-2', 'name' => 'ریزنمرات تحصیلی آموزش-پرورش (ابتدائی- متوسطه)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-3', 'name' => 'ریزنمرات دبیرستان (کل)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-4', 'name' => 'دیپلم پایان تحصیلات متوسطه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-5', 'name' => 'گواهی پایان دوره پیش‌دانشگاهی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-6', 'name' => 'دانش‌نامه (دانشگاهی)', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-7', 'name' => 'ریزنمرات دانشگاه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-8', 'name' => 'گواهی اشتغال به تحصیل', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-9', 'name' => 'گواهی ریزنمرات', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-10', 'name' => 'سرفصل دروس', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-11', 'name' => 'گواهی فنی-حرفه‌ای', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-12', 'name' => 'گواهی حوزه علمیه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-13', 'name' => 'گواهی رتبه', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-14', 'name' => 'گواهی آموزش دوره‌های مراکز دولتی یا خصوصی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
+                    array('id' => '7-15', 'name' => 'مدرک آموزشی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0)
+                ))
             )
         );
     }
@@ -126,9 +184,13 @@ add_action('rest_api_init', function() {
         'get_callback' => function($post) {
             return array(
                 'client_name' => get_post_meta($post['id'], 'client_name', true),
+                'client_first_name' => get_post_meta($post['id'], 'client_first_name', true),
+                'client_last_name' => get_post_meta($post['id'], 'client_last_name', true),
+                'client_company' => get_post_meta($post['id'], 'client_company', true),
                 'client_phone' => get_post_meta($post['id'], 'client_phone', true),
                 'client_email' => get_post_meta($post['id'], 'client_email', true),
                 'client_address' => get_post_meta($post['id'], 'client_address', true),
+                'client_national_id' => get_post_meta($post['id'], 'client_national_id', true),
                 'client_code' => get_post_meta($post['id'], 'client_code', true),
                 'service_type' => get_post_meta($post['id'], 'service_type', true),
                 'client_type' => get_post_meta($post['id'], 'client_type', true),
@@ -142,9 +204,13 @@ add_action('rest_api_init', function() {
         },
         'update_callback' => function($value, $post) {
             if (isset($value['client_name'])) update_post_meta($post->ID, 'client_name', $value['client_name']);
+            if (isset($value['client_first_name'])) update_post_meta($post->ID, 'client_first_name', $value['client_first_name']);
+            if (isset($value['client_last_name'])) update_post_meta($post->ID, 'client_last_name', $value['client_last_name']);
+            if (isset($value['client_company'])) update_post_meta($post->ID, 'client_company', $value['client_company']);
             if (isset($value['client_phone'])) update_post_meta($post->ID, 'client_phone', $value['client_phone']);
             if (isset($value['client_email'])) update_post_meta($post->ID, 'client_email', $value['client_email']);
             if (isset($value['client_address'])) update_post_meta($post->ID, 'client_address', $value['client_address']);
+            if (isset($value['client_national_id'])) update_post_meta($post->ID, 'client_national_id', $value['client_national_id']);
             if (isset($value['client_code'])) update_post_meta($post->ID, 'client_code', $value['client_code']);
             if (isset($value['service_type'])) update_post_meta($post->ID, 'service_type', $value['service_type']);
             if (isset($value['client_type'])) update_post_meta($post->ID, 'client_type', $value['client_type']);
@@ -255,7 +321,6 @@ add_action('rest_api_init', function() {
     register_rest_field('orders', 'meta', array(
         'get_callback' => function($post) {
             return array(
-                'order_code' => get_post_meta($post['id'], 'order_code', true),
                 'client_code' => get_post_meta($post['id'], 'client_code', true),
                 'client_id' => get_post_meta($post['id'], 'client_id', true),
                 'client_type' => get_post_meta($post['id'], 'client_type', true),
@@ -270,6 +335,7 @@ add_action('rest_api_init', function() {
                 'number_of_pages' => get_post_meta($post['id'], 'number_of_pages', true),
                 'urgency' => get_post_meta($post['id'], 'urgency', true),
                 'special_instructions' => get_post_meta($post['id'], 'special_instructions', true),
+                'service_type' => get_post_meta($post['id'], 'service_type', true),
                 'order_status' => get_post_meta($post['id'], 'order_status', true),
                 'created_at' => get_post_meta($post['id'], 'created_at', true),
                 'updated_at' => get_post_meta($post['id'], 'updated_at', true),
@@ -279,10 +345,10 @@ add_action('rest_api_init', function() {
         },
         'update_callback' => function($value, $post) {
             // Update all order fields
-            $fields = ['order_code', 'client_code', 'client_id', 'client_type', 'client_name', 
+            $fields = ['client_code', 'client_id', 'client_type', 'client_name', 
                       'client_phone', 'client_email', 'client_address', 'translation_type', 
                       'document_type', 'language_from', 'language_to', 'number_of_pages', 
-                      'urgency', 'special_instructions', 'order_status', 'created_at', 
+                      'urgency', 'special_instructions', 'service_type', 'order_status', 'created_at', 
                       'updated_at', 'total_price', 'order_history'];
             
             foreach ($fields as $field) {
@@ -730,7 +796,6 @@ function get_orders_with_filters($request) {
         $result[] = array(
             'id' => $order->ID,
             'title' => $order->post_title,
-            'order_code' => get_post_meta($order->ID, 'order_code', true),
             'client_name' => get_post_meta($order->ID, 'client_name', true),
             'client_code' => get_post_meta($order->ID, 'client_code', true),
             'status' => get_post_meta($order->ID, 'order_status', true),
@@ -807,11 +872,6 @@ add_action('rest_api_init', function() {
         },
         'args' => array(
             // Snake case parameters (for form data)
-            'order_code' => array(
-                'required' => false,
-                'type' => 'string',
-                'description' => 'Order code'
-            ),
             'client_code' => array(
                 'required' => false,
                 'type' => 'string',
@@ -879,6 +939,16 @@ add_action('rest_api_init', function() {
                 'type' => 'string',
                 'description' => 'Special instructions'
             ),
+            'service_type' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'Service type'
+            ),
+            'status' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'Order status'
+            ),
             'total_price' => array(
                 'required' => false,
                 'type' => 'number',
@@ -886,11 +956,6 @@ add_action('rest_api_init', function() {
                 'description' => 'Total price'
             ),
             // Camel case parameters (for JSON data)
-            'orderCode' => array(
-                'required' => false,
-                'type' => 'string',
-                'description' => 'Order code (camelCase)'
-            ),
             'clientCode' => array(
                 'required' => false,
                 'type' => 'string',
@@ -926,6 +991,16 @@ add_action('rest_api_init', function() {
                 'required' => false,
                 'type' => 'string',
                 'description' => 'Translation type (camelCase)'
+            ),
+            'serviceType' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'Service type (camelCase)'
+            ),
+            'status' => array(
+                'required' => false,
+                'type' => 'string',
+                'description' => 'Order status (camelCase)'
             ),
             'documentType' => array(
                 'required' => false,
@@ -967,15 +1042,21 @@ function create_unified_order($request) {
     $json_params = $request->get_json_params();
     
     // Extract parameters from camelCase (from REST API validation) or JSON data or snake_case
-    $order_code = $request->get_param('orderCode') ?: 
-                  (isset($json_params['orderCode']) ? $json_params['orderCode'] : 
-                   (isset($json_params['order_code']) ? $json_params['order_code'] : $request->get_param('order_code')));
     $client_code = $request->get_param('clientCode') ?: 
                    (isset($json_params['clientCode']) ? $json_params['clientCode'] : 
                     (isset($json_params['client_code']) ? $json_params['client_code'] : $request->get_param('client_code')));
     $client_name = $request->get_param('clientName') ?: 
                    (isset($json_params['clientName']) ? $json_params['clientName'] : 
                     (isset($json_params['client_name']) ? $json_params['client_name'] : $request->get_param('client_name')));
+    $client_first_name = $request->get_param('clientFirstName') ?: 
+                        (isset($json_params['clientFirstName']) ? $json_params['clientFirstName'] : 
+                         (isset($json_params['client_first_name']) ? $json_params['client_first_name'] : ($request->get_param('client_first_name') ?: '')));
+    $client_last_name = $request->get_param('clientLastName') ?: 
+                       (isset($json_params['clientLastName']) ? $json_params['clientLastName'] : 
+                        (isset($json_params['client_last_name']) ? $json_params['client_last_name'] : ($request->get_param('client_last_name') ?: '')));
+    $client_company = $request->get_param('clientCompany') ?: 
+                     (isset($json_params['clientCompany']) ? $json_params['clientCompany'] : 
+                      (isset($json_params['client_company']) ? $json_params['client_company'] : ($request->get_param('client_company') ?: '')));
     $client_phone = $request->get_param('clientPhone') ?: 
                     (isset($json_params['clientPhone']) ? $json_params['clientPhone'] : 
                      (isset($json_params['client_phone']) ? $json_params['client_phone'] : ($request->get_param('client_phone') ?: '')));
@@ -985,6 +1066,9 @@ function create_unified_order($request) {
     $client_address = $request->get_param('clientAddress') ?: 
                       (isset($json_params['clientAddress']) ? $json_params['clientAddress'] : 
                        (isset($json_params['client_address']) ? $json_params['client_address'] : ($request->get_param('client_address') ?: '')));
+    $client_national_id = $request->get_param('clientNationalId') ?: 
+                         (isset($json_params['clientNationalId']) ? $json_params['clientNationalId'] : 
+                          (isset($json_params['client_national_id']) ? $json_params['client_national_id'] : ($request->get_param('client_national_id') ?: '')));
     $client_type = $request->get_param('clientType') ?: 
                    (isset($json_params['clientType']) ? $json_params['clientType'] : 
                     (isset($json_params['client_type']) ? $json_params['client_type'] : ($request->get_param('client_type') ?: 'person')));
@@ -1009,14 +1093,17 @@ function create_unified_order($request) {
     $special_instructions = $request->get_param('specialInstructions') ?: 
                             (isset($json_params['specialInstructions']) ? $json_params['specialInstructions'] : 
                              (isset($json_params['special_instructions']) ? $json_params['special_instructions'] : ($request->get_param('special_instructions') ?: '')));
+    $service_type = $request->get_param('serviceType') ?: 
+                    (isset($json_params['serviceType']) ? $json_params['serviceType'] : 
+                     (isset($json_params['service_type']) ? $json_params['service_type'] : ($request->get_param('service_type') ?: 'ترجمه')));
+    $status = $request->get_param('status') ?: 
+              (isset($json_params['status']) ? $json_params['status'] : 
+               (isset($json_params['status']) ? $json_params['status'] : ($request->get_param('status') ?: 'acceptance')));
     $total_price = $request->get_param('totalPrice') ?: 
                    (isset($json_params['totalPrice']) ? $json_params['totalPrice'] : 
                     (isset($json_params['total_price']) ? $json_params['total_price'] : ($request->get_param('total_price') ?: 0)));
     
     // Validate required fields
-    if (empty($order_code)) {
-        return new WP_Error('missing_order_code', 'Order code is required', array('status' => 400));
-    }
     if (empty($client_code)) {
         return new WP_Error('missing_client_code', 'Client code is required', array('status' => 400));
     }
@@ -1058,9 +1145,13 @@ function create_unified_order($request) {
         // Update existing client
         $client_id = $existing_client[0]->ID;
         update_post_meta($client_id, 'client_name', $client_name);
+        update_post_meta($client_id, 'client_first_name', $client_first_name);
+        update_post_meta($client_id, 'client_last_name', $client_last_name);
+        update_post_meta($client_id, 'client_company', $client_company);
         update_post_meta($client_id, 'client_phone', $client_phone);
         update_post_meta($client_id, 'client_email', $client_email);
         update_post_meta($client_id, 'client_address', $client_address);
+        update_post_meta($client_id, 'client_national_id', $client_national_id);
         update_post_meta($client_id, 'client_type', $client_type);
         update_post_meta($client_id, 'updated_at', current_time('c'));
         
@@ -1084,11 +1175,15 @@ function create_unified_order($request) {
             // Add client meta data
             update_post_meta($client_id, 'client_code', $client_code);
             update_post_meta($client_id, 'client_name', $client_name);
+            update_post_meta($client_id, 'client_first_name', $client_first_name);
+            update_post_meta($client_id, 'client_last_name', $client_last_name);
+            update_post_meta($client_id, 'client_company', $client_company);
             update_post_meta($client_id, 'client_phone', $client_phone);
             update_post_meta($client_id, 'client_email', $client_email);
             update_post_meta($client_id, 'client_address', $client_address);
+            update_post_meta($client_id, 'client_national_id', $client_national_id);
             update_post_meta($client_id, 'client_type', $client_type);
-            update_post_meta($client_id, 'client_status', 'accepted');
+            update_post_meta($client_id, 'client_status', 'acceptance');
             update_post_meta($client_id, 'created_at', current_time('c'));
             update_post_meta($client_id, 'updated_at', current_time('c'));
         }
@@ -1100,7 +1195,7 @@ function create_unified_order($request) {
     
     // Create order
     $order_post = wp_insert_post(array(
-        'post_title' => "سفارش {$order_code}",
+        'post_title' => "سفارش {$client_code}",
         'post_content' => $special_instructions,
         'post_status' => 'publish',
         'post_type' => 'orders'
@@ -1108,14 +1203,17 @@ function create_unified_order($request) {
     
     if ($order_post && !is_wp_error($order_post)) {
         // Add order meta data
-        update_post_meta($order_post, 'order_code', $order_code);
         update_post_meta($order_post, 'client_code', $client_code);
         update_post_meta($order_post, 'client_id', $client_id);
         update_post_meta($order_post, 'client_type', $client_type);
         update_post_meta($order_post, 'client_name', $client_name);
+        update_post_meta($order_post, 'client_first_name', $client_first_name);
+        update_post_meta($order_post, 'client_last_name', $client_last_name);
+        update_post_meta($order_post, 'client_company', $client_company);
         update_post_meta($order_post, 'client_phone', $client_phone);
         update_post_meta($order_post, 'client_email', $client_email);
         update_post_meta($order_post, 'client_address', $client_address);
+        update_post_meta($order_post, 'client_national_id', $client_national_id);
         update_post_meta($order_post, 'translation_type', $translation_type);
         update_post_meta($order_post, 'document_type', $document_type);
         update_post_meta($order_post, 'language_from', $language_from);
@@ -1123,7 +1221,8 @@ function create_unified_order($request) {
         update_post_meta($order_post, 'number_of_pages', $number_of_pages);
         update_post_meta($order_post, 'urgency', $urgency);
         update_post_meta($order_post, 'special_instructions', $special_instructions);
-        update_post_meta($order_post, 'order_status', 'acceptance');
+        update_post_meta($order_post, 'service_type', $service_type);
+        update_post_meta($order_post, 'order_status', $status);
         update_post_meta($order_post, 'total_price', $total_price);
         update_post_meta($order_post, 'created_at', current_time('c'));
         update_post_meta($order_post, 'updated_at', current_time('c'));
@@ -1144,13 +1243,108 @@ function create_unified_order($request) {
             'message' => 'Order and client created successfully',
             'order_id' => $order_post,
             'client_id' => $client_id,
-            'order_code' => $order_code,
             'client_code' => $client_code
         );
     } else {
         return new WP_Error('order_creation_failed', 'Failed to create order', array('status' => 500));
     }
 }
+
+// Unified endpoint for getting single order with complete client data
+add_action('rest_api_init', function() {
+    register_rest_route('custom/v1', '/unified-orders/(?P<id>\d+)', array(
+        'methods' => 'GET',
+        'callback' => 'get_unified_order',
+        'permission_callback' => function() {
+            // Check if user is authenticated via JWT token
+            $user_id = get_current_user_id();
+            if ($user_id > 0) {
+                return true;
+            }
+            
+            // Check for JWT token in Authorization header
+            $headers = getallheaders();
+            if (isset($headers['Authorization'])) {
+                $token = str_replace('Bearer ', '', $headers['Authorization']);
+                $user_id = wp_validate_auth_cookie($token);
+                return $user_id > 0;
+            }
+            
+            return true; // Allow public access for now
+        },
+        'args' => array(
+            'id' => array(
+                'required' => true,
+                'type' => 'integer',
+                'description' => 'Order ID to get'
+            )
+        )
+    ));
+});
+
+// Unified endpoint for deleting orders with complete client data
+add_action('rest_api_init', function() {
+    register_rest_route('custom/v1', '/unified-orders/(?P<id>\d+)', array(
+        'methods' => 'DELETE',
+        'callback' => 'delete_unified_order',
+        'permission_callback' => function() {
+            // Check if user is authenticated via JWT token
+            $user_id = get_current_user_id();
+            if ($user_id > 0) {
+                return true;
+            }
+            
+            // Check for JWT token in Authorization header
+            $headers = getallheaders();
+            if (isset($headers['Authorization'])) {
+                $token = str_replace('Bearer ', '', $headers['Authorization']);
+                $user_id = wp_validate_auth_cookie($token);
+                return $user_id > 0;
+            }
+            
+            return true; // Allow public access for now
+        },
+        'args' => array(
+            'id' => array(
+                'required' => true,
+                'type' => 'integer',
+                'description' => 'Order ID to delete'
+            )
+        )
+    ));
+});
+
+// Unified endpoint for updating orders with complete client data
+add_action('rest_api_init', function() {
+    register_rest_route('custom/v1', '/unified-orders/(?P<id>\d+)', array(
+        'methods' => 'PUT',
+        'callback' => 'update_unified_order',
+        'permission_callback' => function() {
+            // Check if user is authenticated via JWT token
+            $user_id = get_current_user_id();
+            if ($user_id > 0) {
+                return true;
+            }
+            
+            // Check for JWT token in Authorization header
+            $headers = getallheaders();
+            if (isset($headers['Authorization'])) {
+                $token = str_replace('Bearer ', '', $headers['Authorization']);
+                $user_id = wp_validate_auth_cookie($token);
+                return $user_id > 0;
+            }
+            
+            return true; // Allow public access for now
+        },
+        'args' => array(
+            'id' => array(
+                'required' => true,
+                'type' => 'integer',
+                'description' => 'Order ID to update'
+            )
+        )
+    ));
+});
 
 // Unified endpoint for getting orders with complete client data
 add_action('rest_api_init', function() {
@@ -1204,6 +1398,181 @@ add_action('rest_api_init', function() {
     ));
 });
 
+function delete_unified_order($request) {
+    $order_id = $request['id'];
+    $delete_client = $request->get_param('delete_client') === 'true';
+    
+    // Get order to find client ID
+    $client_id = get_post_meta($order_id, 'client_id', true);
+    
+    // Delete the order
+    $order_deleted = wp_delete_post($order_id, true);
+    
+    if (!$order_deleted) {
+        return new WP_Error('order_deletion_failed', 'Failed to delete order', array('status' => 500));
+    }
+    
+    // If requested, also delete the client
+    if ($delete_client && $client_id) {
+        $client_deleted = wp_delete_post($client_id, true);
+        if (!$client_deleted) {
+            return new WP_Error('client_deletion_failed', 'Failed to delete client', array('status' => 500));
+        }
+    }
+    
+    return array(
+        'success' => true,
+        'message' => 'Order deleted successfully',
+        'order_id' => $order_id,
+        'client_deleted' => $delete_client && $client_id
+    );
+}
+
+function get_unified_order($request) {
+    $order_id = $request['id'];
+    
+    // Get order post
+    $order = get_post($order_id);
+    if (!$order || $order->post_type !== 'orders') {
+        return new WP_Error('order_not_found', 'Order not found', array('status' => 404));
+    }
+    
+    // Get order meta fields
+    $order_data = array(
+        'id' => $order->ID,
+        'client_code' => get_post_meta($order->ID, 'client_code', true),
+        'client_id' => get_post_meta($order->ID, 'client_id', true),
+        'client_type' => get_post_meta($order->ID, 'client_type', true),
+        'client_name' => get_post_meta($order->ID, 'client_name', true),
+        'client_first_name' => get_post_meta($order->ID, 'client_first_name', true),
+        'client_last_name' => get_post_meta($order->ID, 'client_last_name', true),
+        'client_company' => get_post_meta($order->ID, 'client_company', true),
+        'client_phone' => get_post_meta($order->ID, 'client_phone', true),
+        'client_email' => get_post_meta($order->ID, 'client_email', true),
+        'client_address' => get_post_meta($order->ID, 'client_address', true),
+        'client_national_id' => get_post_meta($order->ID, 'client_national_id', true),
+        'translation_type' => get_post_meta($order->ID, 'translation_type', true),
+        'document_type' => get_post_meta($order->ID, 'document_type', true),
+        'language_from' => get_post_meta($order->ID, 'language_from', true),
+        'language_to' => get_post_meta($order->ID, 'language_to', true),
+        'number_of_pages' => get_post_meta($order->ID, 'number_of_pages', true),
+        'urgency' => get_post_meta($order->ID, 'urgency', true),
+        'special_instructions' => get_post_meta($order->ID, 'special_instructions', true),
+        'service_type' => get_post_meta($order->ID, 'service_type', true),
+        'order_status' => get_post_meta($order->ID, 'order_status', true),
+        'total_price' => get_post_meta($order->ID, 'total_price', true),
+        'created_at' => get_post_meta($order->ID, 'created_at', true),
+        'updated_at' => get_post_meta($order->ID, 'updated_at', true),
+        'order_history' => get_post_meta($order->ID, 'order_history', true)
+    );
+    
+    // Get client data if client_id exists
+    $client_id = get_post_meta($order->ID, 'client_id', true);
+    if ($client_id) {
+        $client = get_post($client_id);
+        if ($client && $client->post_type === 'clients') {
+            $order_data['client_data'] = array(
+                'id' => $client->ID,
+                'name' => get_post_meta($client->ID, 'client_name', true),
+                'code' => get_post_meta($client->ID, 'client_code', true),
+                'phone' => get_post_meta($client->ID, 'client_phone', true),
+                'email' => get_post_meta($client->ID, 'client_email', true),
+                'address' => get_post_meta($client->ID, 'client_address', true),
+                'type' => get_post_meta($client->ID, 'client_type', true),
+                'status' => get_post_meta($client->ID, 'client_status', true),
+                'created_at' => get_post_meta($client->ID, 'created_at', true),
+                'updated_at' => get_post_meta($client->ID, 'updated_at', true)
+            );
+        }
+    }
+    
+    return $order_data;
+}
+
+function update_unified_order($request) {
+    $order_id = $request['id'];
+    $data = $request->get_json_params();
+    
+    // Update order post
+    $order_update = wp_update_post(array(
+        'ID' => $order_id,
+        'post_title' => 'سفارش ' . ($data['client_code'] ?? ''),
+        'post_content' => 'سفارش ترجمه',
+        'post_status' => 'publish'
+    ));
+    
+    if (!$order_update) {
+        return new WP_Error('order_update_failed', 'Failed to update order', array('status' => 500));
+    }
+    
+    // Update order meta fields
+    $meta_fields = array(
+        'client_code' => $data['client_code'] ?? '',
+        'client_id' => $data['client_id'] ?? '',
+        'client_type' => $data['client_type'] ?? 'person',
+        'client_name' => $data['client_name'] ?? '',
+        'client_first_name' => $data['client_first_name'] ?? '',
+        'client_last_name' => $data['client_last_name'] ?? '',
+        'client_company' => $data['client_company'] ?? '',
+        'client_phone' => $data['client_phone'] ?? '',
+        'client_email' => $data['client_email'] ?? '',
+        'client_address' => $data['client_address'] ?? '',
+        'client_national_id' => $data['client_national_id'] ?? '',
+        'translation_type' => $data['translation_type'] ?? '',
+        'document_type' => $data['document_type'] ?? '',
+        'language_from' => $data['language_from'] ?? '',
+        'language_to' => $data['language_to'] ?? '',
+        'number_of_pages' => $data['number_of_pages'] ?? 0,
+        'urgency' => $data['urgency'] ?? 'normal',
+        'special_instructions' => $data['special_instructions'] ?? '',
+        'service_type' => $data['service_type'] ?? 'ترجمه',
+        'order_status' => $data['order_status'] ?? 'acceptance',
+        'total_price' => $data['total_price'] ?? 0,
+        'updated_at' => current_time('c')
+    );
+    
+    foreach ($meta_fields as $key => $value) {
+        update_post_meta($order_id, $key, $value);
+    }
+    
+    // Update client if client_id is provided
+    if (!empty($data['client_id'])) {
+        $client_id = $data['client_id'];
+        
+        // Update client post
+        wp_update_post(array(
+            'ID' => $client_id,
+            'post_title' => $data['client_name'] ?? '',
+            'post_content' => 'مشتری',
+            'post_status' => 'publish'
+        ));
+        
+        // Update client meta fields
+        $client_meta_fields = array(
+            'client_name' => $data['client_name'] ?? '',
+            'client_first_name' => $data['client_first_name'] ?? '',
+            'client_last_name' => $data['client_last_name'] ?? '',
+            'client_company' => $data['client_company'] ?? '',
+            'client_phone' => $data['client_phone'] ?? '',
+            'client_email' => $data['client_email'] ?? '',
+            'client_address' => $data['client_address'] ?? '',
+            'client_national_id' => $data['client_national_id'] ?? '',
+            'client_type' => $data['client_type'] ?? 'person',
+            'updated_at' => current_time('c')
+        );
+        
+        foreach ($client_meta_fields as $key => $value) {
+            update_post_meta($client_id, $key, $value);
+        }
+    }
+    
+    return array(
+        'success' => true,
+        'message' => 'Order updated successfully',
+        'order_id' => $order_id
+    );
+}
+
 function get_unified_orders($request) {
     $status = $request->get_param('status');
     $client_id = $request->get_param('client_id');
@@ -1255,10 +1624,14 @@ function get_unified_orders($request) {
                 $client_data = array(
                     'id' => $client_id,
                     'name' => get_post_meta($client_id, 'client_name', true),
+                    'first_name' => get_post_meta($client_id, 'client_first_name', true),
+                    'last_name' => get_post_meta($client_id, 'client_last_name', true),
+                    'company' => get_post_meta($client_id, 'client_company', true),
                     'code' => get_post_meta($client_id, 'client_code', true),
                     'phone' => get_post_meta($client_id, 'client_phone', true),
                     'email' => get_post_meta($client_id, 'client_email', true),
                     'address' => get_post_meta($client_id, 'client_address', true),
+                    'national_id' => get_post_meta($client_id, 'client_national_id', true),
                     'type' => get_post_meta($client_id, 'client_type', true),
                     'status' => get_post_meta($client_id, 'client_status', true),
                     'created_at' => get_post_meta($client_id, 'created_at', true),
@@ -1269,14 +1642,17 @@ function get_unified_orders($request) {
         
         $result[] = array(
             'id' => $order->ID,
-            'order_code' => get_post_meta($order->ID, 'order_code', true),
             'client_code' => get_post_meta($order->ID, 'client_code', true),
             'client_id' => $client_id,
             'client_type' => get_post_meta($order->ID, 'client_type', true),
             'client_name' => get_post_meta($order->ID, 'client_name', true),
+            'client_first_name' => get_post_meta($order->ID, 'client_first_name', true),
+            'client_last_name' => get_post_meta($order->ID, 'client_last_name', true),
+            'client_company' => get_post_meta($order->ID, 'client_company', true),
             'client_phone' => get_post_meta($order->ID, 'client_phone', true),
             'client_email' => get_post_meta($order->ID, 'client_email', true),
             'client_address' => get_post_meta($order->ID, 'client_address', true),
+            'client_national_id' => get_post_meta($order->ID, 'client_national_id', true),
             'translation_type' => get_post_meta($order->ID, 'translation_type', true),
             'document_type' => get_post_meta($order->ID, 'document_type', true),
             'language_from' => get_post_meta($order->ID, 'language_from', true),
@@ -1284,6 +1660,7 @@ function get_unified_orders($request) {
             'number_of_pages' => get_post_meta($order->ID, 'number_of_pages', true),
             'urgency' => get_post_meta($order->ID, 'urgency', true),
             'special_instructions' => get_post_meta($order->ID, 'special_instructions', true),
+            'service_type' => get_post_meta($order->ID, 'service_type', true),
             'order_status' => get_post_meta($order->ID, 'order_status', true),
             'total_price' => get_post_meta($order->ID, 'total_price', true),
             'created_at' => get_post_meta($order->ID, 'created_at', true),

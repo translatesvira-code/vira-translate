@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export type TabType = 'order-wizard' | 'clients' | 'users' | 'financial' | 'settings' | 'client-profile';
+export type TabType = 'order-wizard' | 'clients' | 'archive' | 'financial' | 'settings' | 'client-profile';
 
 interface TabContextType {
   activeTab: TabType;
@@ -37,7 +37,7 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
     const tab = searchParams.get('tab') as TabType;
     const clientName = searchParams.get('clientName');
     
-    if (tab && ['order-wizard', 'clients', 'users', 'financial', 'settings', 'client-profile'].includes(tab)) {
+    if (tab && ['order-wizard', 'clients', 'archive', 'financial', 'settings', 'client-profile'].includes(tab)) {
       setActiveTab(tab);
     }
     

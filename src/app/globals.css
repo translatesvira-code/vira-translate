@@ -82,8 +82,8 @@ table .persian-digits {
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f4f1;
+  --foreground: #4b483f;
 }
 
 /* Modal Animations */
@@ -229,6 +229,7 @@ table .persian-digits {
 html {
   direction: rtl;
   text-align: right;
+  background-color: var(--background);
 }
 
 body {
@@ -237,4 +238,7 @@ body {
   font-family: 'Samim', 'Tahoma', 'Arial', 'Helvetica', sans-serif;
   direction: rtl;
   text-align: right;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }

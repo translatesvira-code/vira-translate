@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const tabs = [
   { id: 'order-wizard' as TabType, label: 'پذیرش سفارش' },
   { id: 'clients' as TabType, label: 'مراجعین' },
-  { id: 'users' as TabType, label: 'کاربران' },
+  { id: 'archive' as TabType, label: 'بایگانی' },
   { id: 'financial' as TabType, label: 'مدیریت مالی' },
   { id: 'settings' as TabType, label: 'تنظیمات' },
 ];

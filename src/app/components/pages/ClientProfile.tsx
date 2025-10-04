@@ -7,17 +7,23 @@ import { toPersianNumbers } from '../../utils/numbers';
 import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
-import { ordersAPI, Order } from '../../lib/orders-api';
-import { unifiedAPI } from '../../lib/unified-api';
+import { unifiedAPI, UnifiedOrder } from '../../lib/unified-api';
 
 interface Client {
   id: number;
   code: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  nationalId?: string;
   serviceType: string;
   translateDate: string;
   deliveryDate: string;
-  status: 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived';
+  status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
 }
 
 interface ClientProfileProps {
@@ -27,10 +33,11 @@ interface ClientProfileProps {
 const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   const router = useRouter();
   const [client, setClient] = useState<Client | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<UnifiedOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'userInfo' | 'visits' | 'financial'>('userInfo');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [description, setDescription] = useState('این پروژه شامل ترجمه متون تخصصی با بالاترین کیفیت و دقت می‌باشد. تمامی مراحل ترجمه، ویرایش و بازخوانی با دقت انجام خواهد شد.');
+  const [description, setDescription] = useState('');
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [isStatusModalClosing, setIsStatusModalClosing] = useState(false);
@@ -49,7 +56,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleteModalClosing, setIsDeleteModalClosing] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<UnifiedOrder | null>(null);
   const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
   interface UploadedFile {
     id: string;
@@ -69,14 +76,28 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // Helper function to get display name
+
+  const getDisplayName = (client: Client): string => {
+    // Priority: company > name > firstName + lastName
+    if (client.company && client.company.trim()) {
+      return client.company.trim();
+    }
+    if (client.name && client.name.trim()) {
+      return client.name.trim();
+    }
+    if (client.firstName || client.lastName) {
+      return `${client.firstName || ''} ${client.lastName || ''}`.trim();
+    }
+    return 'نامشخص';
+  };
+
   const loadOrders = useCallback(async () => {
     try {
-      console.log('🔍 Loading orders for client:', clientName);
       const unifiedData = await unifiedAPI.getUnifiedOrders();
       
-      // Filter orders for this specific client
-      const clientOrders = unifiedData.orders.filter(order => order.clientName === clientName);
-      console.log('✅ Found orders for client:', clientOrders);
+      // Filter orders for this specific client by client code
+      const clientOrders = unifiedData.orders.filter(order => order.clientCode === clientName);
       setOrders(clientOrders);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -87,29 +108,69 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     const loadClient = async () => {
       setLoading(true);
       try {
-        // Try to find client by name from orders
-        const orders = await ordersAPI.getOrders();
-        const orderWithClient = orders.find(order => order.clientName === clientName);
+        // Load clients from unified orders API
+        const unifiedData = await unifiedAPI.getUnifiedOrders();
         
-        if (orderWithClient) {
-          // Create client object from order data
-          const clientData: Client = {
-            id: Number(orderWithClient.clientId) || Number(orderWithClient.id),
-            code: orderWithClient.clientCode,
-            name: orderWithClient.clientName,
-            serviceType: orderWithClient.translationType,
-            translateDate: orderWithClient.createdAt ? new Date(orderWithClient.createdAt).toLocaleDateString('fa-IR') : '',
-            deliveryDate: '',
-            status: orderWithClient.status === 'acceptance' ? 'accepted' as const :
-                    orderWithClient.status === 'completion' ? 'translating' as const :
-                    orderWithClient.status === 'translation' ? 'translating' as const :
-                    orderWithClient.status === 'editing' ? 'editing' as const :
-                    orderWithClient.status === 'office' ? 'editing' as const :
-                    orderWithClient.status === 'ready' ? 'ready' as const :
-                    'accepted' as const
+        // Group orders by client code and get the latest order for each client
+        const clientGroups = unifiedData.orders.reduce((groups, order) => {
+          const clientCode = order.clientCode;
+          if (!groups[clientCode]) {
+            groups[clientCode] = [];
+          }
+          groups[clientCode].push(order);
+          return groups;
+        }, {} as Record<string, typeof unifiedData.orders>);
+        
+        // Create clients from unified orders data, using the latest order for status
+        const clientsFromUnified = Object.values(clientGroups).map(clientOrders => {
+          // Sort by updatedAt to get the latest order
+          const latestOrder = clientOrders.sort((a, b) => 
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          )[0];
+          
+          return {
+            id: Number(latestOrder.clientId),
+            code: latestOrder.clientCode,
+            name: latestOrder.clientName,
+            firstName: latestOrder.clientFirstName,
+            lastName: latestOrder.clientLastName,
+            company: latestOrder.clientCompany,
+            phone: latestOrder.clientPhone,
+            email: latestOrder.clientEmail,
+            address: latestOrder.clientAddress,
+            nationalId: latestOrder.clientNationalId,
+            serviceType: latestOrder.serviceType || 'ترجمه',
+            translateDate: latestOrder.createdAt ? new Date(latestOrder.createdAt).toLocaleDateString('fa-IR') : '',
+            deliveryDate: latestOrder.status === 'ready' ? new Date(latestOrder.updatedAt).toLocaleDateString('fa-IR') : '',
+            status: latestOrder.status === 'acceptance' ? 'acceptance' as const :
+                    latestOrder.status === 'completion' ? 'completion' as const :
+                    latestOrder.status === 'translation' ? 'translating' as const :
+                    latestOrder.status === 'editing' ? 'editing' as const :
+                    latestOrder.status === 'office' ? 'office' as const :
+                    latestOrder.status === 'ready' ? 'ready' as const :
+                    'acceptance' as const
           };
-          setClient(clientData);
+        });
+        
+        // No need to remove duplicates since we already grouped by client code
+        const uniqueClients = clientsFromUnified;
+        
+        // Find client by code (since we're passing client.code from Clients component)
+        const foundClient = uniqueClients.find(client => client.code === clientName);
+        
+        if (foundClient) {
+          setClient(foundClient);
+          
+          // Find the latest order for this client to get special instructions
+          const clientOrders = clientGroups[foundClient.code] || [];
+          const latestOrder = clientOrders.sort((a, b) => 
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          )[0];
+          
+          // Set description from latest order's special instructions
+          setDescription(latestOrder?.specialInstructions || '');
         } else {
+          console.log('Client not found:', clientName);
           setClient(null);
         }
       } catch (error) {
@@ -158,15 +219,64 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     }
   };
 
-  const handleConfirmStatusChange = () => {
+  const handleConfirmStatusChange = async () => {
     if (client && selectedStatus) {
-      setClient(prev => prev ? { ...prev, status: selectedStatus as 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived' } : null);
-      handleCloseStatusModal();
-      setShowStatusSuccess(true);
-      
-      setTimeout(() => {
-        setShowStatusSuccess(false);
-      }, 3000);
+      try {
+        // First, update the order status in the backend for all orders of this client
+        const clientOrders = orders.filter(o => o.clientCode === client.code);
+        
+        for (const order of clientOrders) {
+          // Map client status to order status
+          const orderStatus = selectedStatus === 'translating' ? 'translation' : selectedStatus;
+          
+          const success = await unifiedAPI.updateOrderStatus(
+            order.id, 
+            orderStatus, 
+            'user', 
+            `وضعیت سفارش از پروفایل مشتری به ${getStatusText(selectedStatus)} تغییر یافت`
+          );
+          
+          if (!success) {
+            console.error(`Failed to update order ${order.id} status`);
+          }
+        }
+        
+        // Update local client state immediately (since we already updated orders in backend)
+        setClient(prev => prev ? { ...prev, status: selectedStatus as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived' } : null);
+        
+        // Update local orders state to reflect the new status
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.clientCode === client.code
+              ? { ...order, status: selectedStatus === 'translating' ? 'translation' : selectedStatus as 'acceptance' | 'completion' | 'translation' | 'editing' | 'office' | 'ready' }
+              : order
+          )
+        );
+        
+        handleCloseStatusModal();
+        setShowStatusSuccess(true);
+        
+        setTimeout(() => {
+          setShowStatusSuccess(false);
+        }, 3000);
+      } catch (error) {
+        console.error('Error updating client status:', error);
+        // Fallback to local state update
+        setClient(prev => prev ? { ...prev, status: selectedStatus as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived' } : null);
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.clientId === client.id.toString() 
+              ? { ...order, status: selectedStatus === 'translating' ? 'translation' : selectedStatus as 'acceptance' | 'completion' | 'translation' | 'editing' | 'office' | 'ready' }
+              : order
+          )
+        );
+        handleCloseStatusModal();
+        setShowStatusSuccess(true);
+        
+        setTimeout(() => {
+          setShowStatusSuccess(false);
+        }, 3000);
+      }
     }
   };
 
@@ -214,7 +324,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     }, 300);
   };
 
-  const handleDeleteOrder = (order: Order) => {
+  const handleDeleteOrder = (order: UnifiedOrder) => {
     setOrderToDelete(order);
     setShowDeleteModal(true);
   };
@@ -399,11 +509,12 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'accepted': return 'پذیرش';
+      case 'acceptance': return 'پذیرش';
+      case 'completion': return 'تکمیل اطلاعات';
       case 'translating': return 'ترجمه';
       case 'editing': return 'ویرایش';
+      case 'office': return 'امور دفتری';
       case 'ready': return 'آماده تحویل';
-      case 'delivered': return 'تحویل شده';
       case 'archived': return 'بایگانی';
       default: return status;
     }
@@ -411,11 +522,12 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'accepted': return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'acceptance': return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'completion': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
       case 'translating': return 'bg-orange-100 text-orange-800 border border-orange-200';
       case 'editing': return 'bg-purple-100 text-purple-800 border border-purple-200';
+      case 'office': return 'bg-pink-100 text-pink-800 border border-pink-200';
       case 'ready': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'delivered': return 'bg-green-100 text-green-800 border border-green-200';
       case 'archived': return 'bg-gray-100 text-gray-800 border border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
@@ -423,12 +535,13 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-8">
+      <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 cursor-pointer"
+              className="flex items-center gap-2 transition-colors duration-200 cursor-pointer"
+              style={{ color: '#4b483f' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -438,7 +551,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-8">
             <div className="flex items-center justify-center">
-              <div className="text-gray-600">در حال بارگذاری...</div>
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#4b483f' }}></div>
+                <span style={{ color: '#4b483f' }}>در حال بارگذاری...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -448,7 +564,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
 
   if (!client) {
     return (
-      <div className="min-h-screen p-8">
+      <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <button
@@ -473,13 +589,14 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8" style={{ backgroundColor: '#f5f4f1' }}>
       <div className="max-w-7xl mx-auto">
         {/* Back Button */}
         <div className="mb-6">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 cursor-pointer"
+            className="flex items-center gap-2 transition-colors duration-200 cursor-pointer"
+            style={{ color: '#4b483f' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -489,11 +606,11 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
         </div>
 
         {/* Profile Header */}
-        <div className="bg-white rounded-lg border border-gray-200 p-8 mb-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                پروفایل: {client.name}
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                پروفایل: {getDisplayName(client)}
               </h1>
               <p className="text-gray-600">کد سفارش: {toPersianNumbers(client.code)}</p>
             </div>
@@ -505,49 +622,173 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
           </div>
         </div>
 
-        {/* Profile Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setActiveTab('userInfo')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                activeTab === 'userInfo'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              اطلاعات کاربری
+            </button>
+            <button
+              onClick={() => setActiveTab('visits')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                activeTab === 'visits'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              مراجعات
+            </button>
+            <button
+              onClick={() => setActiveTab('financial')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                activeTab === 'financial'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              مالی
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'userInfo' && (
+          <div className="grid grid-cols-1 gap-4">
           {/* Basic Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               اطلاعات شخصی
             </h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">نام و نام خانوادگی:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{client.name}</span>
-                    <button
-                      onClick={() => handleEditField('name')}
-                      className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Company Name */}
+                {client.company && client.company.trim() && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">نام شرکت</label>
+                      <button
+                        onClick={() => handleEditField('company')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.company}</p>
                   </div>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">کد سفارش:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{toPersianNumbers(client.code)}</span>
-                    <button
-                      onClick={() => handleEditField('code')}
-                      className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                )}
+                
+                {/* Personal Name */}
+                {(client.firstName || client.lastName || client.name) && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">نام و نام خانوادگی</label>
+                      <button
+                        onClick={() => handleEditField('name')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">
+                      {client.firstName && client.lastName 
+                        ? `${client.firstName} ${client.lastName}`
+                        : client.name
+                      }
+                    </p>
                   </div>
+                )}
+                
+                {/* Contact Information */}
+                {client.phone && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">شماره تلفن</label>
+                      <button
+                        onClick={() => handleEditField('phone')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.phone}</p>
+                  </div>
+                )}
+                
+                {client.email && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">ایمیل</label>
+                      <button
+                        onClick={() => handleEditField('email')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.email}</p>
+                  </div>
+                )}
+                
+                {client.address && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">آدرس</label>
+                      <button
+                        onClick={() => handleEditField('address')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.address}</p>
+                  </div>
+                )}
+                
+                {client.nationalId && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">کد ملی</label>
+                      <button
+                        onClick={() => handleEditField('nationalId')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.nationalId}</p>
+                  </div>
+                )}
+                
+                {/* Service Information */}
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <label className="text-sm text-gray-500 block mb-1">کد مشتری</label>
+                  <p className="font-medium text-gray-800">{client.code}</p>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">نوع خدمت:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{client.serviceType}</span>
+                
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-sm text-gray-500">نوع خدمات</label>
                     <button
                       onClick={() => handleEditField('serviceType')}
                       className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
@@ -557,29 +798,12 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                       </svg>
                     </button>
                   </div>
+                  <p className="font-medium text-gray-800">{client.serviceType}</p>
                 </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">وضعیت:</span>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
-                    {getStatusText(client.status)}
-                  </span>
-                </div>
-              </div>
-          </div>
-
-          {/* Project Timeline */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              زمان‌بندی پروژه
-            </h2>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">تاریخ شروع ترجمه:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{client.translateDate || 'تعیین نشده'}</span>
+                
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-sm text-gray-500">تاریخ پذیرش</label>
                     <button
                       onClick={() => handleEditField('translateDate')}
                       className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
@@ -589,115 +813,40 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                       </svg>
                     </button>
                   </div>
+                  <p className="font-medium text-gray-800">{client.translateDate}</p>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">تاریخ تحویل:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-800">{client.deliveryDate || 'تعیین نشده'}</span>
-                    <button
-                      onClick={() => handleEditField('deliveryDate')}
-                      className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                
+                {client.deliveryDate && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm text-gray-500">تاریخ تحویل</label>
+                      <button
+                        onClick={() => handleEditField('deliveryDate')}
+                        className="text-gray-400 hover:text-blue-600 transition-colors duration-200 cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="font-medium text-gray-800">{client.deliveryDate}</p>
                   </div>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">شماره پروژه:</span>
-                  <span className="font-medium text-gray-800">{toPersianNumbers(client.id)}</span>
+                )}
+                
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <label className="text-sm text-gray-500 block mb-1">وضعیت</label>
+                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
+                    {getStatusText(client.status)}
+                  </span>
                 </div>
               </div>
-            </div>
+          </div>
 
-            {/* Orders Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                سفارشات مشتری
-              </h2>
-              
-              {orders.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد سفارش</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد کاربر</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع ترجمه</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع سند</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">زبان</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تعداد صفحات</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">وضعیت</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تاریخ ایجاد</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">عملیات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {orders.map((order) => (
-                        <tr key={order.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.orderCode}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.clientCode}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{order.translationType}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{order.documentType}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{order.languageFrom} → {order.languageTo}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{toPersianNumbers(order.numberOfPages.toString())}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              order.status === 'acceptance' ? 'bg-blue-100 text-blue-800' :
-                              order.status === 'completion' ? 'bg-yellow-100 text-yellow-800' :
-                              order.status === 'translation' ? 'bg-purple-100 text-purple-800' :
-                              order.status === 'editing' ? 'bg-orange-100 text-orange-800' :
-                              order.status === 'office' ? 'bg-indigo-100 text-indigo-800' :
-                              order.status === 'ready' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {order.status === 'acceptance' ? 'پذیرش' :
-                               order.status === 'completion' ? 'تکمیل اطلاعات' :
-                               order.status === 'translation' ? 'ترجمه' :
-                               order.status === 'editing' ? 'ویرایش' :
-                               order.status === 'office' ? 'امور دفتری' :
-                               order.status === 'ready' ? 'آماده تحویل' :
-                               order.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : '-'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleDeleteOrder(order)}
-                              className="text-red-600 hover:text-red-800 transition-colors duration-200 cursor-pointer"
-                              title="حذف سفارش"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-sm">هیچ سفارشی برای این مشتری ثبت نشده است</p>
-                </div>
-              )}
-            </div>
-
-          {/* Service Details */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          {/* Service Details and Project Progress - Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Service Details */}
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
@@ -754,10 +903,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                 )}
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* Status Progress */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* Project Progress */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -765,9 +914,9 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
               پیشرفت پروژه
             </h2>
             <div className="space-y-1">
-              {['accepted', 'translating', 'editing', 'ready', 'delivered', 'archived'].map((status, index) => {
+              {['acceptance', 'completion', 'translating', 'editing', 'office', 'ready', 'archived'].map((status, index) => {
                 const isActive = status === client.status && client.status !== 'archived';
-                const currentStatusIndex = ['accepted', 'translating', 'editing', 'ready', 'delivered', 'archived'].indexOf(client.status);
+                const currentStatusIndex = ['acceptance', 'completion', 'translating', 'editing', 'office', 'ready', 'archived'].indexOf(client.status);
                 const isCompleted = currentStatusIndex > index || client.status === 'archived';
                 const isClickable = status !== client.status;
                 
@@ -775,7 +924,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                   <div key={status} className="relative">
                     {/* Status Item */}
                     <div 
-                      className={`flex items-center gap-4 p-3 rounded-lg border transition-all duration-200 ${
+                      className={`flex items-center gap-4 p-1 rounded-lg border transition-all duration-200 ${
                         isClickable 
                           ? 'cursor-pointer hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm' 
                           : 'cursor-default'
@@ -790,7 +939,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                     >
                       {/* Status Circle */}
                       <div className="relative z-10">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${
                           isActive 
                             ? 'bg-blue-500 border-blue-500 text-white' 
                             : isCompleted 
@@ -838,6 +987,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
 
@@ -1044,6 +1194,114 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
             )}
           </div>
         </div>
+        )}
+
+        {/* Visits Tab */}
+        {activeTab === 'visits' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              تاریخچه مراجعات
+            </h2>
+            
+            {orders.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد سفارش</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">کد کاربر</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع ترجمه</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">نوع سند</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">زبان</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تعداد صفحات</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">وضعیت</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">تاریخ ایجاد</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-600">عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.orderCode}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">{order.clientCode}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{order.translationType}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{order.documentType}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{order.languageFrom} → {order.languageTo}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{toPersianNumbers(order.numberOfPages.toString())}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            order.status === 'acceptance' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'completion' ? 'bg-yellow-100 text-yellow-800' :
+                            order.status === 'translation' ? 'bg-purple-100 text-purple-800' :
+                            order.status === 'editing' ? 'bg-orange-100 text-orange-800' :
+                            order.status === 'office' ? 'bg-indigo-100 text-indigo-800' :
+                            order.status === 'ready' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {order.status === 'acceptance' ? 'پذیرش' :
+                             order.status === 'completion' ? 'تکمیل اطلاعات' :
+                             order.status === 'translation' ? 'ترجمه' :
+                             order.status === 'editing' ? 'ویرایش' :
+                             order.status === 'office' ? 'امور دفتری' :
+                             order.status === 'ready' ? 'آماده تحویل' :
+                             order.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleDeleteOrder(order)}
+                            className="text-red-600 hover:text-red-800 transition-colors duration-200 cursor-pointer"
+                            title="حذف سفارش"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-sm">هیچ سفارشی برای این مشتری ثبت نشده است</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Financial Tab */}
+        {activeTab === 'financial' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              اطلاعات مالی
+            </h2>
+            
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm">این بخش در حال توسعه است</p>
+            </div>
+          </div>
+        )}
 
 
         {/* Status Change Modal */}
@@ -1077,8 +1335,8 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                 </p>
                 <div className="flex items-center justify-center gap-2 text-sm">
                   <span className="text-gray-500">از:</span>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(client?.status || 'accepted')}`}>
-                    {getStatusText(client?.status || 'accepted')}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(client?.status || 'acceptance')}`}>
+                    {getStatusText(client?.status || 'acceptance')}
                   </span>
                   <span className="text-gray-500">به:</span>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedStatus)}`}>
@@ -1144,7 +1402,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
               </h2>
 
               {/* Form */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {editingField === 'name' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">نام و نام خانوادگی</label>

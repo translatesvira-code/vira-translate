@@ -4,10 +4,17 @@ export interface Client {
   id: number;
   code: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  nationalId?: string;
   serviceType: string;
   translateDate: string;
   deliveryDate: string;
-  status: 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived';
+  status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
   created_at?: string;
   updated_at?: string;
 }
@@ -15,19 +22,33 @@ export interface Client {
 export interface CreateClientData {
   name: string;
   code: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  nationalId?: string;
   serviceType: string;
   translateDate?: string;
   deliveryDate?: string;
-  status?: 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived';
+  status?: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
 }
 
 export interface UpdateClientData {
   name?: string;
   code?: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  nationalId?: string;
   serviceType?: string;
   translateDate?: string;
   deliveryDate?: string;
-  status?: 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived';
+  status?: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
 }
 
 class ClientsAPI {
@@ -60,6 +81,41 @@ class ClientsAPI {
       'Authorization': `Bearer ${user.token}`,
       'Content-Type': 'application/json',
     };
+  }
+
+  // Get single client by ID
+  async getClient(id: number): Promise<Client | null> {
+    try {
+      const headers = await this.getAuthHeaders();
+      
+      // Try to get from custom post type first
+      const response = await fetch(`${this.baseUrl}/${this.customPostType}/${id}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (response.ok) {
+        const post = await response.json();
+        return this.mapPostToClient(post);
+      }
+
+      // Fallback: try regular posts endpoint
+      const postsResponse = await fetch(`${this.baseUrl}/posts/${id}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (postsResponse.ok) {
+        const post = await postsResponse.json();
+        return this.mapPostToClient(post);
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('Error fetching client:', error);
+      return null;
+    }
   }
 
   // Get all clients
@@ -115,7 +171,7 @@ class ClientsAPI {
           service_type: clientData.serviceType,
           translate_date: clientData.translateDate || '',
           delivery_date: clientData.deliveryDate || '',
-          client_status: clientData.status || 'accepted',
+          client_status: clientData.status || 'acceptance',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
@@ -325,17 +381,26 @@ class ClientsAPI {
   private mapPostToClient(post: Record<string, unknown>): Client {
     const meta = (post.meta as Record<string, unknown>) || {};
     
-    return {
+    const client = {
       id: Number(post.id) || 0,
       code: (meta.client_code as string) || `TR${(post.id as number || 0).toString().padStart(4, '0')}`,
       name: (meta.client_name as string) || ((post.title as Record<string, unknown>)?.rendered as string) || 'نامشخص',
+      firstName: (meta.client_first_name as string) || '',
+      lastName: (meta.client_last_name as string) || '',
+      company: (meta.client_company as string) || '',
+      phone: (meta.client_phone as string) || '',
+      email: (meta.client_email as string) || '',
+      address: (meta.client_address as string) || '',
+      nationalId: (meta.client_national_id as string) || '',
       serviceType: (meta.service_type as string) || 'ترجمه رسمی',
       translateDate: (meta.translate_date as string) || '',
       deliveryDate: (meta.delivery_date as string) || '',
-      status: (meta.client_status as 'accepted' | 'translating' | 'editing' | 'ready' | 'delivered' | 'archived') || 'accepted',
+      status: (meta.client_status as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived') || 'acceptance',
       created_at: (meta.created_at as string) || (post.date as string),
       updated_at: (meta.updated_at as string) || (post.modified as string)
     };
+    
+    return client;
   }
 }export const clientsAPI = new ClientsAPI();
 
