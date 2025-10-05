@@ -28,9 +28,23 @@ interface InvoiceHTMLProps {
     createdAt: string;
     specialInstructions?: string;
   }>;
+  invoiceSettings?: {
+    header: {
+      officeNumber: string;
+      translatorName: string;
+      officeName: string;
+      city: string;
+      address: string;
+      phone: string;
+      whatsapp: string;
+      telegram: string;
+      eitaa: string;
+    };
+    footer: string;
+  };
 }
 
-const InvoiceHTML: React.FC<InvoiceHTMLProps> = ({ client, orders }) => {
+const InvoiceHTML: React.FC<InvoiceHTMLProps> = ({ client, orders, invoiceSettings }) => {
   const getTranslationTypeText = (type: string) => {
     const typeMap: Record<string, string> = {
       'certified': 'ترجمه رسمی',
@@ -73,131 +87,282 @@ const InvoiceHTML: React.FC<InvoiceHTMLProps> = ({ client, orders }) => {
   return (
     <div 
       id="invoice-content" 
-      className="bg-white p-8 max-w-4xl mx-auto"
       style={{ 
         fontFamily: 'Samim, Arial, sans-serif',
         direction: 'rtl',
-        lineHeight: '1.6'
+        lineHeight: '1.4',
+        width: '210mm',
+        height: '148mm',
+        fontSize: '11px',
+        backgroundColor: 'white',
+        padding: '15px',
+        margin: '0 auto'
       }}
     >
       {/* Header */}
-      <div className="text-center mb-8 pb-6 border-b-2 border-[#687B69]">
-        <h1 className="text-3xl font-bold text-[#48453F] mb-2">شرکت ویرا ترجمه</h1>
-        <p className="text-[#656051] text-sm">
-          آدرس: تهران، خیابان ولیعصر، پلاک ۱۲۳<br />
-          تلفن: ۰۲۱-۱۲۳۴۵۶۷۸ | ایمیل: info@viratranslate.ir
-        </p>
-      </div>
-
-      {/* Invoice Title */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-[#2B593E]">فاکتور خدمات ترجمه</h2>
-        <p className="text-[#656051] mt-2">تاریخ صدور: {currentDate}</p>
-      </div>
-
-      {/* Client Information */}
-      <div className="bg-[#F7F2F2] rounded-lg p-6 mb-8 border border-[#C0B8AC66]">
-        <h3 className="text-lg font-bold text-[#48453F] mb-4">اطلاعات مشتری</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex justify-between">
-            <span className="text-[#656051] font-medium">کد مشتری:</span>
-            <span className="text-[#48453F]">{toPersianNumbers(client.code)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#656051] font-medium">نام:</span>
-            <span className="text-[#48453F]">
-              {client.company || `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.name}
-            </span>
-          </div>
-          {client.phone && (
-            <div className="flex justify-between">
-              <span className="text-[#656051] font-medium">تلفن:</span>
-              <span className="text-[#48453F]">{toPersianNumbers(client.phone)}</span>
-            </div>
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '12px', 
+        paddingBottom: '8px', 
+        borderBottom: '1px solid #2D5A27'
+      }}>
+        <h1 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#2D5A27', 
+          marginBottom: '6px'
+        }}>
+          {invoiceSettings?.header.officeName || 'شرکت ویرا ترجمه'}
+        </h1>
+        <div style={{ 
+          color: '#495057', 
+          fontSize: '10px', 
+          lineHeight: '1.5'
+        }}>
+          {invoiceSettings?.header.translatorName && (
+            <span>نام مترجم: {invoiceSettings.header.translatorName} | </span>
           )}
-          {client.email && (
-            <div className="flex justify-between">
-              <span className="text-[#656051] font-medium">ایمیل:</span>
-              <span className="text-[#48453F]">{client.email}</span>
-            </div>
+          {invoiceSettings?.header.officeNumber && (
+            <span>شماره دفتر: {toPersianNumbers(invoiceSettings.header.officeNumber)} | </span>
           )}
-          {client.address && (
-            <div className="flex justify-between col-span-full">
-              <span className="text-[#656051] font-medium">آدرس:</span>
-              <span className="text-[#48453F]">{client.address}</span>
-            </div>
+          {invoiceSettings?.header.city && (
+            <span>شهر: {invoiceSettings.header.city} | </span>
+          )}
+          {invoiceSettings?.header.address && (
+            <span>آدرس: {invoiceSettings.header.address} | </span>
+          )}
+          {invoiceSettings?.header.phone && (
+            <span>تلفن: {toPersianNumbers(invoiceSettings.header.phone)} | </span>
+          )}
+          {invoiceSettings?.header.whatsapp && (
+            <span>واتس‌اپ: {toPersianNumbers(invoiceSettings.header.whatsapp)} | </span>
+          )}
+          {invoiceSettings?.header.telegram && (
+            <span>تلگرام: {invoiceSettings.header.telegram} | </span>
+          )}
+          {invoiceSettings?.header.eitaa && (
+            <span>ایتا: {invoiceSettings.header.eitaa}</span>
+          )}
+          {!invoiceSettings && (
+            <span>آدرس: تهران، خیابان ولیعصر، پلاک ۱۲۳ | تلفن: ۰۲۱-۱۲۳۴۵۶۷۸ | ایمیل: info@viratranslate.ir</span>
           )}
         </div>
       </div>
 
+      {/* Invoice Title */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '12px',
+        padding: '8px',
+        backgroundColor: '#2D5A27',
+        borderRadius: '4px',
+        color: 'white'
+      }}>
+        <h2 style={{ 
+          fontSize: '16px', 
+          fontWeight: 'bold', 
+          marginBottom: '2px'
+        }}>فاکتور خدمات ترجمه</h2>
+        <p style={{ 
+          fontSize: '11px', 
+          opacity: '0.9',
+          margin: '0'
+        }}>تاریخ صدور: {currentDate}</p>
+      </div>
+
+      {/* Client Information */}
+      <div style={{ 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '4px', 
+        padding: '8px', 
+        marginBottom: '10px', 
+        border: '1px solid #2D5A27'
+      }}>
+        <h3 style={{ 
+          fontSize: '12px', 
+          fontWeight: 'bold', 
+          color: '#2D5A27', 
+          marginBottom: '6px',
+          textAlign: 'center'
+        }}>اطلاعات مشتری</h3>
+        <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057', width: '50%' }}>کد مشتری:</td>
+              <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27', width: '50%' }}>{toPersianNumbers(client.code)}</td>
+              <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057', width: '50%' }}>نام:</td>
+              <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27', width: '50%' }}>
+                {client.company || `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.name}
+              </td>
+            </tr>
+            {client.phone && (
+              <tr>
+                <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>تلفن:</td>
+                <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }}>{toPersianNumbers(client.phone)}</td>
+                {client.email ? (
+                  <>
+                    <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>ایمیل:</td>
+                    <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }}>{client.email}</td>
+                  </>
+                ) : (
+                  <>
+                    <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef' }}></td>
+                    <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef' }}></td>
+                  </>
+                )}
+              </tr>
+            )}
+            {client.address && (
+              <tr>
+                <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>آدرس:</td>
+                <td style={{ padding: '4px 6px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }} colSpan={3}>{client.address}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       {/* Orders Section */}
-      <div className="mb-8">
-        <h3 className="text-lg font-bold text-[#48453F] mb-4">خدمات درخواستی</h3>
-        <div className="space-y-4">
+      <div style={{ marginBottom: '12px' }}>
+        <h3 style={{ 
+          fontSize: '12px', 
+          fontWeight: 'bold', 
+          color: '#2D5A27', 
+          marginBottom: '6px',
+          textAlign: 'center'
+        }}>خدمات درخواستی</h3>
+        <div>
           {orders.map((order, index) => (
-            <div key={order.id} className="bg-[#F7F2F2] rounded-lg p-4 border border-[#C0B8AC66]">
-              <div className="flex justify-between items-start mb-3">
-                <h4 className="text-lg font-bold text-[#2B593E]">
+            <div key={order.id} style={{ 
+              backgroundColor: '#f8f9fa', 
+              borderRadius: '4px', 
+              padding: '8px', 
+              border: '1px solid #2D5A27', 
+              marginBottom: '6px'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: '6px',
+                paddingBottom: '4px',
+                borderBottom: '1px solid #2D5A27'
+              }}>
+                <h4 style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 'bold', 
+                  color: '#2D5A27'
+                }}>
                   سفارش {toPersianNumbers((index + 1).toString())} - کد: {toPersianNumbers(order.orderCode || order.id)}
                 </h4>
-                <span className="bg-[#687B6926] text-[#687B69] px-3 py-1 rounded-full text-sm font-medium">
+                <span style={{ 
+                  backgroundColor: '#2D5A27', 
+                  color: 'white', 
+                  padding: '2px 6px', 
+                  borderRadius: '10px', 
+                  fontSize: '9px', 
+                  fontWeight: '600'
+                }}>
                   {getStatusText(order.status)}
                 </span>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[#656051] font-medium">نوع ترجمه:</span>
-                  <span className="text-[#48453F]">{getTranslationTypeText(order.translationType)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#656051] font-medium">زبان:</span>
-                  <span className="text-[#48453F]">
-                    {getLanguageText(order.languageFrom)} → {getLanguageText(order.languageTo)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#656051] font-medium">تعداد صفحات:</span>
-                  <span className="text-[#48453F]">{toPersianNumbers(order.numberOfPages?.toString() || '0')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#656051] font-medium">مبلغ:</span>
-                  <span className="text-[#2B593E] font-bold">
-                    {toPersianNumbers((order.totalPrice || 0).toLocaleString())} ریال
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#656051] font-medium">تاریخ سفارش:</span>
-                  <span className="text-[#48453F]">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : 'نامشخص'}
-                  </span>
-                </div>
-                {order.specialInstructions && (
-                  <div className="flex justify-between col-span-full">
-                    <span className="text-[#656051] font-medium">توضیحات:</span>
-                    <span className="text-[#48453F]">{order.specialInstructions}</span>
-                  </div>
-                )}
-              </div>
+              <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057', width: '25%' }}>نوع ترجمه:</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27', width: '25%' }}>{getTranslationTypeText(order.translationType)}</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057', width: '25%' }}>زبان:</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27', width: '25%' }}>
+                      {getLanguageText(order.languageFrom)} → {getLanguageText(order.languageTo)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>تعداد صفحات:</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }}>{toPersianNumbers(order.numberOfPages?.toString() || '0')}</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>مبلغ:</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }}>
+                      {toPersianNumbers((order.totalPrice || 0).toLocaleString())} ریال
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>تاریخ سفارش:</td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }}>
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString('fa-IR') : 'نامشخص'}
+                    </td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef' }}></td>
+                    <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef' }}></td>
+                  </tr>
+                  {order.specialInstructions && (
+                    <tr>
+                      <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: '600', color: '#495057' }}>توضیحات:</td>
+                      <td style={{ padding: '3px 5px', backgroundColor: 'white', border: '1px solid #e9ecef', fontWeight: 'bold', color: '#2D5A27' }} colSpan={3}>{order.specialInstructions}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           ))}
         </div>
       </div>
 
       {/* Total Section */}
-      <div className="bg-[#2B593E26] rounded-lg p-6 border-2 border-[#2B593E66] mb-8">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-[#2B593E] mb-2">مجموع کل</h3>
-          <div className="text-3xl font-bold text-[#2B593E]">
+      <div style={{ 
+        backgroundColor: '#2D5A27', 
+        borderRadius: '6px', 
+        padding: '10px', 
+        border: '2px solid #1a3d1a', 
+        marginBottom: '8px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ 
+            fontSize: '14px', 
+            fontWeight: 'bold', 
+            color: 'white', 
+            marginBottom: '4px'
+          }}>مجموع کل</h3>
+          <div style={{ 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            color: 'white',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            padding: '6px',
+            borderRadius: '4px',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
             {toPersianNumbers(totalAmount.toLocaleString())} ریال
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="text-center pt-6 border-t border-[#C0B8AC66]">
-        <p className="text-[#656051] text-sm mb-2">با تشکر از اعتماد شما</p>
-        <p className="text-[#656051] text-xs">شرکت ویرا ترجمه - ارائه خدمات ترجمه تخصصی</p>
+      <div style={{ 
+        textAlign: 'center', 
+        paddingTop: '8px', 
+        borderTop: '1px solid #2D5A27',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '0 0 4px 4px',
+        padding: '8px'
+      }}>
+        <p style={{ 
+          color: '#2D5A27', 
+          fontSize: '11px', 
+          marginBottom: '4px',
+          fontWeight: '600'
+        }}>با تشکر از اعتماد شما</p>
+        {invoiceSettings?.footer ? (
+          <p style={{ 
+            color: '#495057', 
+            fontSize: '10px',
+            fontStyle: 'italic'
+          }}>{invoiceSettings.footer}</p>
+        ) : (
+          <p style={{ 
+            color: '#495057', 
+            fontSize: '10px',
+            fontStyle: 'italic'
+          }}>شرکت ویرا ترجمه - ارائه خدمات ترجمه تخصصی</p>
+        )}
       </div>
     </div>
   );

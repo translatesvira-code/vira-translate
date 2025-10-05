@@ -61,6 +61,25 @@ function get_vira_settings() {
                 array('id' => '2', 'name' => 'تائیدات خارجه', 'price' => 0, 'additionType' => 'percentage', 'additionValue' => 0, 'total' => 0),
                 array('id' => '3', 'name' => 'برابر اصل', 'price' => 0, 'additionType' => 'percentage', 'additionValue' => 0, 'total' => 0)
             ),
+            'translators' => array(
+                'translators' => array(),
+                'assistants' => array(),
+                'editors' => array()
+            ),
+            'invoice' => array(
+                'header' => array(
+                    'officeNumber' => '',
+                    'translatorName' => '',
+                    'officeName' => '',
+                    'city' => '',
+                    'address' => '',
+                    'phone' => '',
+                    'whatsapp' => '',
+                    'telegram' => '',
+                    'eitaa' => ''
+                ),
+                'footer' => 'توضیحات فاکتور'
+            ),
             'categories' => array(
                 array('id' => '1', 'name' => 'هویتی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array()),
                 array('id' => '2', 'name' => 'تحصیلی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0, 'items' => array()),
@@ -124,6 +143,16 @@ function get_vira_settings() {
                     array('id' => '7-14', 'name' => 'گواهی آموزش دوره‌های مراکز دولتی یا خصوصی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0),
                     array('id' => '7-15', 'name' => 'مدرک آموزشی', 'translationPrice' => 0, 'officeServicePrice' => 0, 'hasInquiry' => false, 'hasInquiry' => false, 'inquiryPrices' => array(), 'total' => 0)
                 ))
+            ),
+            'languages' => array(
+                'from' => '',
+                'to' => '',
+                'pairs' => array(
+                    array('from' => 'persian', 'to' => 'english'),
+                    array('from' => 'english', 'to' => 'persian'),
+                    array('from' => 'arabic', 'to' => 'persian'),
+                    array('from' => 'persian', 'to' => 'arabic')
+                )
             )
         );
     }

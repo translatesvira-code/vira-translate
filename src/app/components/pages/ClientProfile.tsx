@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toPersianNumbers } from '../../utils/numbers';
 import { unifiedAPI, UnifiedOrder } from '../../lib/unified-api';
+import { settingsAPI, InvoiceSettings } from '../../lib/settings-api';
 import { useNotification } from '../../hooks/useNotification';
 import Notification from '../Notification';
 import InvoiceHTML from '../InvoiceHTML';
@@ -38,6 +39,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
   const [orders, setOrders] = useState<UnifiedOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'userInfo' | 'visits' | 'financial'>('userInfo');
+  const [invoiceSettings, setInvoiceSettings] = useState<InvoiceSettings | null>(null);
   
   // Edit modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -172,10 +174,23 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     }
   };
 
+  const loadInvoiceSettings = useCallback(async () => {
+    try {
+      const settings = await settingsAPI.getSettings();
+      if (settings && settings.invoice) {
+        setInvoiceSettings(settings.invoice);
+      }
+    } catch (error) {
+      console.error('Error loading invoice settings:', error);
+    }
+  }, []);
 
   const loadClientData = useCallback(async () => {
     setLoading(true);
     try {
+      // Load invoice settings
+      await loadInvoiceSettings();
+      
       // First try to get client by ID from the existing orders data
       let clientData: Client | null = null;
       let clientIdFromOrders: number | null = null;
@@ -294,7 +309,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     } finally {
       setLoading(false);
     }
-  }, [clientName]);
+  }, [clientName, loadInvoiceSettings]);
 
   useEffect(() => {
     if (clientName) {
@@ -318,7 +333,8 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '-9999px';
-      tempContainer.style.width = '210mm'; // A4 width
+      tempContainer.style.width = '210mm'; // A5 landscape width
+      tempContainer.style.height = '148mm'; // A5 landscape height
       tempContainer.style.backgroundColor = 'white';
       
       // Render the invoice component
@@ -331,7 +347,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
       const root = createRoot(invoiceElement);
       
       await new Promise<void>((resolve) => {
-        root.render(<InvoiceHTML client={client} orders={orders} />);
+        root.render(<InvoiceHTML client={client} orders={orders} invoiceSettings={invoiceSettings || undefined} />);
         setTimeout(resolve, 1000); // Wait for rendering
       });
       
@@ -341,29 +357,17 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 794, // A4 width in pixels at 96 DPI
-        height: tempContainer.scrollHeight
+        width: 794, // A5 landscape width in pixels at 96 DPI
+        height: 562 // A5 landscape height in pixels at 96 DPI
       });
       
       // Create PDF
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      const pdf = new jsPDF('l', 'mm', 'a5'); // landscape A5
+      const imgWidth = 210; // A5 landscape width in mm
+      const imgHeight = 148; // A5 landscape height in mm
       
-      let position = 0;
-      
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       
       // Download PDF
       const fileName = `فاکتور_${client.code}_${new Date().toLocaleDateString('fa-IR').replace(/\//g, '-')}.pdf`;
@@ -1142,7 +1146,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
               <h2 className="text-md font-medium text-[#48453F]">اطلاعات مالی</h2>
               <button
                 onClick={handleDownloadInvoice}
-                className="flex items-center gap-2 px-4 py-2 bg-[#2B593E] text-white rounded-lg hover:bg-[#1e3d2a] transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-[#a5b1a3] text-white rounded-lg hover:bg-[#6b7869] transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1276,7 +1280,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                 <button
                   onClick={handleUpdateField}
                   disabled={isUpdating}
-                  className="flex-1 px-4 py-2 bg-[#687B69] text-white rounded-md hover:bg-[#5A6B5A] transition-all duration-200 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.02] disabled:hover:scale-100"
+                  className="flex-1 px-4 py-2 bg-[#a5b1a3] text-white rounded-md hover:bg-[#6b7869] transition-all duration-200 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.02] disabled:hover:scale-100"
                 >
                   {isUpdating ? 'در حال ذخیره...' : 'ذخیره'}
                 </button>
@@ -1414,7 +1418,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
               <button
                 onClick={handleUpdateOrderField}
                 disabled={isOrderUpdating}
-                className="flex-1 px-4 py-2 bg-[#687B69] text-white rounded-md hover:bg-[#5A6B5A] transition-all duration-200 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.02] disabled:hover:scale-100"
+                className="flex-1 px-4 py-2 bg-[#a5b1a3] text-white rounded-md hover:bg-[#6b7869] transition-all duration-200 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed hover:scale-[1.02] disabled:hover:scale-100"
               >
                 {isOrderUpdating ? 'در حال ذخیره...' : 'ذخیره'}
               </button>

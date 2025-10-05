@@ -47,8 +47,8 @@ const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'primary':
         return {
-          default: `bg-[${colors.stoneGreen}] text-white`,
-          hover: `hover:bg-[${colors.verde}] hover:text-white`,
+          default: `bg-[#a5b1a3] text-white`,
+          hover: `hover:bg-[#6b7869] hover:text-white`,
           disabled: `bg-[${colors.lightGray}] text-[${colors.gray}] cursor-not-allowed`,
           error: `bg-[${colors.vermillion}] text-white`,
           pressed: `active:bg-[${colors.darkGray}] active:text-white`
@@ -56,17 +56,17 @@ const Button: React.FC<ButtonProps> = ({
       
       case 'secondary':
         return {
-          default: `bg-white border border-[${colors.stoneGreen}] text-[${colors.stoneGreen}]`,
-          hover: `hover:bg-[${colors.ashGreen}26] hover:border-[${colors.stoneGreen}] hover:text-[${colors.stoneGreen}]`, // 15% opacity
+          default: `bg-white border border-[#a5b1a3] text-[#a5b1a3]`,
+          hover: `hover:bg-[#6b7869] hover:border-[#6b7869] hover:text-white`,
           disabled: `border-[${colors.lightGray}] text-[${colors.lightGray}] cursor-not-allowed`,
           error: `border-[${colors.vermillion}] text-[${colors.vermillion}]`,
-          pressed: `active:bg-[${colors.bone}] active:border-[${colors.stoneGreen}] active:text-[${colors.stoneGreen}]`
+          pressed: `active:bg-[${colors.bone}] active:border-[#6b7869] active:text-white`
         };
       
       case 'tertiary':
         return {
-          default: `text-[${colors.stoneGreen}] bg-transparent border-transparent`,
-          hover: `hover:text-[${colors.verde}] hover:bg-transparent`,
+          default: `text-[#a5b1a3] bg-transparent border-transparent`,
+          hover: `hover:text-[#6b7869] hover:bg-transparent`,
           disabled: `text-[${colors.lightGray}] cursor-not-allowed`,
           error: `text-[${colors.vermillion}]`,
           pressed: `active:text-[${colors.darkGray}]`
@@ -80,7 +80,7 @@ const Button: React.FC<ButtonProps> = ({
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
-        return 'px-3 py-1.5 text-sm';
+        return 'px-3 py-1 text-sm';
       case 'md':
         return 'px-4 py-2 text-sm';
       case 'lg':
