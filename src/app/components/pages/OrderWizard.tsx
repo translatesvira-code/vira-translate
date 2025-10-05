@@ -7,7 +7,7 @@ import { settingsAPI, CategorySettings } from '../../lib/settings-api';
 import { useNotification } from '../../hooks/useNotification';
 import Notification from '../../components/Notification';
 import { toPersianNumbers } from '../../utils/numbers';
-import { Button } from '../ui';
+import { Button, Select, RadioButton, Input } from '../ui';
 
 // Types
 
@@ -61,6 +61,42 @@ interface NewClient {
   serviceType: string;
   status: 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived';
 }
+
+// Options for selects
+const languageOptions = [
+  { value: 'persian', label: 'فارسی' },
+  { value: 'english', label: 'انگلیسی' },
+  { value: 'arabic', label: 'عربی' },
+  { value: 'french', label: 'فرانسوی' },
+  { value: 'german', label: 'آلمانی' },
+  { value: 'spanish', label: 'اسپانیایی' },
+  { value: 'italian', label: 'ایتالیایی' },
+  { value: 'russian', label: 'روسی' },
+  { value: 'chinese', label: 'چینی' },
+  { value: 'japanese', label: 'ژاپنی' },
+  { value: 'korean', label: 'کره‌ای' },
+  { value: 'turkish', label: 'ترکی' }
+];
+
+const urgencyOptions = [
+  { value: 'normal', label: 'عادی' },
+  { value: 'urgent', label: 'فوری' },
+  { value: 'very_urgent', label: 'خیلی فوری' }
+];
+
+const translationTypeOptions = [
+  { value: 'certified', label: 'ترجمه رسمی' },
+  { value: 'simple', label: 'ترجمه ساده' },
+  { value: 'sworn', label: 'ترجمه سوگند' },
+  { value: 'notarized', label: 'ترجمه محضری' }
+];
+
+const serviceTypeOptions = [
+  { value: 'ترجمه', label: 'ترجمه' },
+  { value: 'تائیدات دادگستری', label: 'تائیدات دادگستری' },
+  { value: 'تائیدات خارجه', label: 'تائیدات خارجه' },
+  { value: 'برابر اصل', label: 'برابر اصل' }
+];
 
 const OrderWizard: React.FC = () => {
   const { notification, showNotification, hideNotification } = useNotification();
@@ -638,28 +674,22 @@ const OrderWizard: React.FC = () => {
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-800 mb-3">نوع کاربر</label>
                 <div className="flex gap-4">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="clientType"
-                      value="existing"
-                      checked={!isNewClient}
-                      onChange={() => setIsNewClient(false)}
-                      className="ml-2 w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-gray-800 font-medium">کاربر موجود</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      name="clientType"
-                      value="new"
-                      checked={isNewClient}
-                      onChange={() => setIsNewClient(true)}
-                      className="ml-2 w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-gray-800 font-medium">کاربر جدید</span>
-                  </label>
+                  <RadioButton
+                    name="clientType"
+                    value="existing"
+                    checked={!isNewClient}
+                    onChange={() => setIsNewClient(false)}
+                    label="کاربر موجود"
+                    className="flex-1"
+                  />
+                  <RadioButton
+                    name="clientType"
+                    value="new"
+                    checked={isNewClient}
+                    onChange={() => setIsNewClient(true)}
+                    label="کاربر جدید"
+                    className="flex-1"
+                  />
                 </div>
               </div>
 
@@ -673,21 +703,15 @@ const OrderWizard: React.FC = () => {
                         <p className="text-sm">لطفاً کاربر جدید ایجاد کنید</p>
                       </div>
                     ) : (
-                      <select
-                        value={selectedClient?.id || ''}
-                        onChange={(e) => {
-                          const client = clients.find(c => c.id.toString() === e.target.value);
+                      <Select
+                        options={clients.map(client => ({ value: client.id.toString(), label: `${(client.company && client.company.trim()) ? client.company.trim() : client.name} - ${client.code}` }))}
+                        value={selectedClient?.id?.toString() || ''}
+                        onChange={(value) => {
+                          const client = clients.find(c => c.id.toString() === value);
                           setSelectedClient(client || null);
                         }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                      >
-                        <option value="">انتخاب کنید...</option>
-                        {clients.map(client => (
-                          <option key={client.id} value={client.id}>
-                            {(client.company && client.company.trim()) ? client.company.trim() : client.name} - {client.code}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="انتخاب کنید..."
+                      />
                     )}
                   </div>
 
@@ -695,91 +719,73 @@ const OrderWizard: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={newClient.firstName}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                        placeholder="نام مشتری را وارد کنید"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">نام خانوادگی <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={newClient.lastName}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                        placeholder="نام خانوادگی مشتری را وارد کنید"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">نام شرکت</label>
-                    <input
+                    <Input
+                      label="نام"
                       type="text"
-                      value={newClient.company}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                      placeholder="نام شرکت را وارد کنید"
+                      value={newClient.firstName}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="نام مشتری را وارد کنید"
+                      required
+                    />
+
+                    <Input
+                      label="نام خانوادگی"
+                      type="text"
+                      value={newClient.lastName}
+                      onChange={(e) => setNewClient(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="نام خانوادگی مشتری را وارد کنید"
+                      required
                     />
                   </div>
+
+                  <Input
+                    label="نام شرکت"
+                    type="text"
+                    value={newClient.company}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
+                    placeholder="نام شرکت را وارد کنید"
+                  />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">شماره تلفن <span className="text-red-500">*</span></label>
-                      <input
-                        type="tel"
-                        value={toPersianNumbers(newClient.phone)}
-                        onChange={(e) => {
-                          const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
-                            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-                            return persianDigits.indexOf(digit).toString();
-                          });
-                          setNewClient(prev => ({ ...prev, phone: englishValue }));
-                        }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 text-right"
-                        placeholder="شماره تلفن مشتری را وارد کنید"
-                        required
-                      />
-                    </div>
+                    <Input
+                      label="شماره تلفن"
+                      type="tel"
+                      value={toPersianNumbers(newClient.phone)}
+                      onChange={(e) => {
+                        const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
+                          const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                          return persianDigits.indexOf(digit).toString();
+                        });
+                        setNewClient(prev => ({ ...prev, phone: englishValue }));
+                      }}
+                      placeholder="شماره تلفن مشتری را وارد کنید"
+                      required
+                    />
 
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">کد ملی <span className="text-red-500">*</span></label>
-                      <input
-                        type="text"
-                        value={toPersianNumbers(newClient.nationalId)}
-                        onChange={(e) => {
-                          const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
-                            const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-                            return persianDigits.indexOf(digit).toString();
-                          });
-                          setNewClient(prev => ({ ...prev, nationalId: englishValue }));
-                        }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 text-right"
-                        placeholder="کد ملی مشتری را وارد کنید"
-                        maxLength={10}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">ایمیل</label>
-                    <input
-                      type="email"
-                      value={newClient.email}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                      placeholder="ایمیل مشتری را وارد کنید"
+                    <Input
+                      label="کد ملی"
+                      type="text"
+                      value={toPersianNumbers(newClient.nationalId)}
+                      onChange={(e) => {
+                        const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
+                          const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                          return persianDigits.indexOf(digit).toString();
+                        });
+                        setNewClient(prev => ({ ...prev, nationalId: englishValue }));
+                      }}
+                      placeholder="کد ملی مشتری را وارد کنید"
+                      maxLength={10}
+                      required
                     />
                   </div>
+
+                  <Input
+                    label="ایمیل"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="ایمیل مشتری را وارد کنید"
+                  />
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-800 mb-2">آدرس <span className="text-red-500">*</span></label>
@@ -793,27 +799,13 @@ const OrderWizard: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">عنوان خدمات</label>
-                    <select
-                      value={newClient.serviceType}
-                      onChange={(e) => setNewClient(prev => ({ ...prev, serviceType: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                    >
-                      <option value="ترجمه">ترجمه</option>
-                      <option value="تائیدات دادگستری">تائیدات دادگستری</option>
-                      <option value="تائیدات خارجه">تائیدات خارجه</option>
-                      <option value="برابر اصل">برابر اصل</option>
-                    </select>
-                  </div>
 
                   <div className="border-t border-gray-200 pt-4 pb-3">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">نام معرف</label>
-                    <input
+                    <Input
+                      label="نام معرف"
                       type="text"
                       value={newClient.referrerName}
                       onChange={(e) => setNewClient(prev => ({ ...prev, referrerName: e.target.value }))}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#687B6926] focus:border-[#687B69] text-gray-800 font-persian-numbers"
                       placeholder="نام فرد معرف را وارد کنید"
                     />
                   </div>
@@ -846,83 +838,65 @@ const OrderWizard: React.FC = () => {
               <h3 className="text-xl font-bold text-gray-900 mb-4">اطلاعات مشتری</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نام</label>
-                  <input
-                    type="text"
-                    value={order.clientFirstName || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, clientFirstName: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                    placeholder="نام مشتری را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="نام"
+                  type="text"
+                  value={order.clientFirstName || ''}
+                  onChange={(e) => setOrder(prev => ({ ...prev, clientFirstName: e.target.value }))}
+                  placeholder="نام مشتری را وارد کنید"
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نام خانوادگی</label>
-                  <input
-                    type="text"
-                    value={order.clientLastName || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, clientLastName: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                    placeholder="نام خانوادگی مشتری را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="نام خانوادگی"
+                  type="text"
+                  value={order.clientLastName || ''}
+                  onChange={(e) => setOrder(prev => ({ ...prev, clientLastName: e.target.value }))}
+                  placeholder="نام خانوادگی مشتری را وارد کنید"
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نام شرکت (اختیاری)</label>
-                  <input
-                    type="text"
-                    value={order.clientCompany || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, clientCompany: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                    placeholder="نام شرکت را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="نام شرکت (اختیاری)"
+                  type="text"
+                  value={order.clientCompany || ''}
+                  onChange={(e) => setOrder(prev => ({ ...prev, clientCompany: e.target.value }))}
+                  placeholder="نام شرکت را وارد کنید"
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">شماره تلفن</label>
-                  <input
-                    type="tel"
-                    value={toPersianNumbers(order.clientPhone || '')}
-                    onChange={(e) => {
-                      const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
-                        const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-                        return persianDigits.indexOf(digit).toString();
-                      });
-                      setOrder(prev => ({ ...prev, clientPhone: englishValue }));
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
-                    placeholder="شماره تلفن مشتری را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="شماره تلفن"
+                  type="tel"
+                  value={toPersianNumbers(order.clientPhone || '')}
+                  onChange={(e) => {
+                    const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
+                      const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                      return persianDigits.indexOf(digit).toString();
+                    });
+                    setOrder(prev => ({ ...prev, clientPhone: englishValue }));
+                  }}
+                  placeholder="شماره تلفن مشتری را وارد کنید"
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">ایمیل</label>
-                  <input
-                    type="email"
-                    value={order.clientEmail || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, clientEmail: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    placeholder="ایمیل مشتری را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="ایمیل"
+                  type="email"
+                  value={order.clientEmail || ''}
+                  onChange={(e) => setOrder(prev => ({ ...prev, clientEmail: e.target.value }))}
+                  placeholder="ایمیل مشتری را وارد کنید"
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">کد ملی</label>
-                  <input
-                    type="text"
-                    value={toPersianNumbers(order.clientNationalId || '')}
-                    onChange={(e) => {
-                      const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
-                        const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-                        return persianDigits.indexOf(digit).toString();
-                      });
-                      setOrder(prev => ({ ...prev, clientNationalId: englishValue }));
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
-                    placeholder="کد ملی مشتری را وارد کنید"
-                  />
-                </div>
+                <Input
+                  label="کد ملی"
+                  type="text"
+                  value={toPersianNumbers(order.clientNationalId || '')}
+                  onChange={(e) => {
+                    const englishValue = e.target.value.replace(/[۰-۹]/g, (digit) => {
+                      const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+                      return persianDigits.indexOf(digit).toString();
+                    });
+                    setOrder(prev => ({ ...prev, clientNationalId: englishValue }));
+                  }}
+                  placeholder="کد ملی مشتری را وارد کنید"
+                />
               </div>
 
               <div className="mt-4">
@@ -945,114 +919,73 @@ const OrderWizard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">نوع ترجمه <span className="text-red-500">*</span></label>
-                  <select
+                  <Select
+                    options={translationTypeOptions}
                     value={order.translationType || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, translationType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    required
-                  >
-                    <option value="">انتخاب کنید...</option>
-                    <option value="certified">ترجمه رسمی</option>
-                    <option value="simple">ترجمه ساده</option>
-                    <option value="sworn">ترجمه سوگند</option>
-                    <option value="notarized">ترجمه محضری</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع سند <span className="text-red-500">*</span></label>
-                  <select
-                    value={order.documentType || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, documentType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    required
-                  >
-                    <option value="">انتخاب کنید...</option>
-                    {getAllDocumentItems().map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مبدأ <span className="text-red-500">*</span></label>
-                  <select
-                    value={order.languageFrom || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, languageFrom: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    required
-                  >
-                    <option value="">انتخاب کنید...</option>
-                    <option value="persian">فارسی</option>
-                    <option value="english">انگلیسی</option>
-                    <option value="arabic">عربی</option>
-                    <option value="french">فرانسوی</option>
-                    <option value="german">آلمانی</option>
-                    <option value="other">سایر</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مقصد <span className="text-red-500">*</span></label>
-                  <select
-                    value={order.languageTo || ''}
-                    onChange={(e) => setOrder(prev => ({ ...prev, languageTo: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    required
-                  >
-                    <option value="">انتخاب کنید...</option>
-                    <option value="persian">فارسی</option>
-                    <option value="english">انگلیسی</option>
-                    <option value="arabic">عربی</option>
-                    <option value="french">فرانسوی</option>
-                    <option value="german">آلمانی</option>
-                    <option value="other">سایر</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">تعداد صفحات <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    value={order.numberOfPages || 0}
-                    onChange={(e) => setOrder(prev => ({ ...prev, numberOfPages: parseInt(e.target.value) || 0 }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 text-right"
-                    min="0"
-                    required
+                    onChange={(value) => setOrder(prev => ({ ...prev, translationType: value }))}
+                    placeholder="انتخاب کنید..."
                   />
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع سند <span className="text-red-500">*</span></label>
+                  <Select
+                    options={getAllDocumentItems().map(item => ({ value: item.id, label: item.name }))}
+                    value={order.documentType || ''}
+                    onChange={(value) => setOrder(prev => ({ ...prev, documentType: value }))}
+                    placeholder="انتخاب کنید..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مبدأ <span className="text-red-500">*</span></label>
+                  <Select
+                    options={languageOptions}
+                    value={order.languageFrom || ''}
+                    onChange={(value) => setOrder(prev => ({ ...prev, languageFrom: value }))}
+                    placeholder="انتخاب کنید..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">زبان مقصد <span className="text-red-500">*</span></label>
+                  <Select
+                    options={languageOptions}
+                    value={order.languageTo || ''}
+                    onChange={(value) => setOrder(prev => ({ ...prev, languageTo: value }))}
+                    placeholder="انتخاب کنید..."
+                  />
+                </div>
+
+                <Input
+                  label="تعداد صفحات"
+                  type="number"
+                  value={order.numberOfPages || 0}
+                  onChange={(e) => setOrder(prev => ({ ...prev, numberOfPages: parseInt(e.target.value) || 0 }))}
+                  min="0"
+                  required
+                />
+
+                <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">فوریت <span className="text-red-500">*</span></label>
-                  <select
+                  <Select
+                    options={urgencyOptions}
                     value={order.urgency || 'normal'}
-                    onChange={(e) => setOrder(prev => ({ ...prev, urgency: e.target.value as 'normal' | 'urgent' | 'very_urgent' }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800"
-                    required
-                  >
-                    <option value="normal">عادی</option>
-                    <option value="urgent">فوری</option>
-                    <option value="very_urgent">خیلی فوری</option>
-                  </select>
+                    onChange={(value) => setOrder(prev => ({ ...prev, urgency: value as 'normal' | 'urgent' | 'very_urgent' }))}
+                    placeholder="انتخاب کنید..."
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">نوع خدمات <span className="text-red-500">*</span></label>
-                  <select
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">عنوان خدمات <span className="text-red-500">*</span></label>
+                  <Select
+                    options={serviceTypeOptions}
                     value={order.serviceType || 'ترجمه'}
-                    onChange={(e) => setOrder(prev => ({ ...prev, serviceType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#687B69] focus:border-[#687B69] text-gray-800 font-persian-numbers"
-                    required
-                  >
-                    <option value="ترجمه">ترجمه</option>
-                    <option value="تائیدات دادگستری">تائیدات دادگستری</option>
-                    <option value="تائیدات خارجه">تائیدات خارجه</option>
-                    <option value="برابر اصل">برابر اصل</option>
-                  </select>
+                    onChange={(value) => setOrder(prev => ({ ...prev, serviceType: value }))}
+                    placeholder="انتخاب کنید..."
+                  />
                 </div>
 
               </div>
@@ -1138,8 +1071,8 @@ const OrderWizard: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold mb-2" style={{ color: '#4b483f' }}>ویزارد پذیرش سفارش</h1>
-        <p style={{ color: '#4b483f' }}>مراحل پذیرش و پیگیری سفارش ترجمه</p>
+        <h1 className="text-2xl font-bold mb-2" style={{ color: '#4b483f' }}>پذیرش سفارش</h1>
+        <p style={{ color: '#4b483f' }}>مراحل پذیرش سفارش ترجمه</p>
       </div>
 
       {/* Progress Steps */}
@@ -1150,7 +1083,7 @@ const OrderWizard: React.FC = () => {
               <div key={step.id} className="flex flex-col items-center">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 mb-2 ${
                   currentStep >= step.id
-                    ? 'bg-[#687B69] border-[#687B69] text-white'
+                    ? 'bg-[#a5b1a3] border-[#a5b1a3] text-white'
                     : 'border-gray-300 text-gray-500 bg-white'
                 }`}>
                   {step.id}
@@ -1169,7 +1102,7 @@ const OrderWizard: React.FC = () => {
         <div className="flex justify-center mt-4">
           <div className="w-full max-w-md h-1 bg-gray-200 rounded-full">
             <div
-              className="h-1 bg-[#687B69] rounded-full transition-all duration-300"
+              className="h-1 bg-[#a5b1a3] rounded-full transition-all duration-300"
               style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
             ></div>
           </div>
@@ -1196,7 +1129,7 @@ const OrderWizard: React.FC = () => {
           <p className="text-sm font-medium mb-1" style={{ color: '#4b483f' }}>مرحله {currentStep} از {steps.length}</p>
           <div className="w-24 h-1.5 bg-gray-200 rounded-full mx-auto">
             <div
-              className="h-1.5 bg-[#687B69] rounded-full transition-all duration-300"
+              className="h-1.5 bg-[#a5b1a3] rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / steps.length) * 100}%` }}
             ></div>
           </div>

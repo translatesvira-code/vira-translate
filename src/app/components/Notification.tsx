@@ -32,13 +32,13 @@ const Notification: React.FC<NotificationProps> = ({
   const getNotificationStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-500 text-white border-green-600';
+        return 'bg-[#a5b1a3] text-white border-[#6b7869]';
       case 'error':
-        return 'bg-red-500 text-white border-red-600';
+        return 'bg-[#A43E2F] text-white border-[#992A1F]';
       case 'info':
-        return 'bg-blue-500 text-white border-blue-600';
+        return 'bg-[#687B69] text-white border-[#4b483f]';
       default:
-        return 'bg-gray-500 text-white border-gray-600';
+        return 'bg-[#656051] text-white border-[#48453F]';
     }
   };
 
@@ -69,7 +69,7 @@ const Notification: React.FC<NotificationProps> = ({
 
   return (
     <div className="fixed top-4 right-4 z-50 animate-[slideIn_0.3s_ease-out_forwards]">
-      <div className={`px-6 py-4 rounded-lg shadow-lg border flex items-center gap-3 min-w-80 ${getNotificationStyles()}`}>
+      <div className={`px-6 py-4 rounded-lg shadow-lg border flex items-center gap-3 min-w-80 backdrop-blur-sm ${getNotificationStyles()}`}>
         <div className="flex-shrink-0">
           {getIcon()}
         </div>
@@ -78,7 +78,7 @@ const Notification: React.FC<NotificationProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="flex-shrink-0 text-white hover:text-gray-200 transition-colors duration-200"
+          className="flex-shrink-0 text-white hover:text-gray-200 transition-colors duration-200 p-1 rounded-full hover:bg-white/20"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

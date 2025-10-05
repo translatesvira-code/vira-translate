@@ -15,7 +15,7 @@ export interface DocumentItem {
   translationPrice: number;
   officeServicePrice: number;
   hasInquiry: boolean;
-  inquiryPrices: number[];
+  inquiryPrices: { title: string; price: number }[];
   total: number;
 }
 
@@ -36,15 +36,44 @@ export interface LanguageSettings {
   pairs: LanguagePair[];
 }
 
+export interface Translator {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface TranslatorsSettings {
+  translators: Translator[];
+  assistants: Translator[];
+  editors: Translator[];
+}
+
+export interface InvoiceSettings {
+  header: {
+    officeNumber: string;
+    translatorName: string;
+    officeName: string;
+    city: string;
+    address: string;
+    phone: string;
+    whatsapp: string;
+    telegram: string;
+    eitaa: string;
+  };
+  footer: string;
+}
+
 export interface SettingsData {
   services: ServiceSettings[];
   categories: CategorySettings[];
   languages?: LanguageSettings;
+  translators?: TranslatorsSettings;
+  invoice?: InvoiceSettings;
 }
 
 class SettingsAPI {
   private baseUrl = 'https://admin.viratranslate.ir/wp-json';
-  private customEndpoint = '/custom/v1/settings'; // Custom endpoint for settings
+  private customEndpoint = '/custom/v1/settings';
 
   private async getAuthHeaders() {
     // Try localStorage first
@@ -82,20 +111,51 @@ class SettingsAPI {
       const response = await fetch(`${this.baseUrl}${this.customEndpoint}`, {
         method: 'GET',
         headers,
+        mode: 'cors',
       });
 
       if (response.ok) {
         const settingsData = await response.json();
-        console.log('Loaded settings from API:', settingsData);
         return settingsData;
+      } else {
+        // If authentication failed, try without auth headers
+        if (response.status === 401 || response.status === 403) {
+          const publicResponse = await fetch(`${this.baseUrl}${this.customEndpoint}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+          });
+          
+          if (publicResponse.ok) {
+            const publicSettingsData = await publicResponse.json();
+            return publicSettingsData;
+          }
+        }
+        
+        return this.getDefaultSettings();
       }
 
-      // Return default settings if no data found
-      console.log('No settings found, returning defaults');
-      return this.getDefaultSettings();
-
-    } catch (error) {
-      console.error('Error fetching settings:', error);
+    } catch {
+      // If fetch fails completely, try a different approach
+      try {
+        const fallbackResponse = await fetch(`${this.baseUrl}${this.customEndpoint}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          mode: 'cors',
+        });
+        
+        if (fallbackResponse.ok) {
+          const fallbackSettingsData = await fallbackResponse.json();
+          return fallbackSettingsData;
+        }
+      } catch {
+        // Fallback also failed
+      }
+      
       return this.getDefaultSettings();
     }
   }
@@ -104,31 +164,21 @@ class SettingsAPI {
   async saveSettings(settings: SettingsData): Promise<boolean> {
     try {
       const headers = await this.getAuthHeaders();
-      
-      console.log('Sending settings to WordPress API:', {
-        url: `${this.baseUrl}${this.customEndpoint}`,
-        method: 'POST',
-        data: settings
-      });
 
       const response = await fetch(`${this.baseUrl}${this.customEndpoint}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(settings),
+        mode: 'cors',
       });
 
-      console.log('Save response status:', response.status);
-
       if (response.ok) {
-        console.log('Settings saved successfully in WordPress');
         return true;
       }
 
-      console.error('Save failed with status:', response.status);
       return false;
 
-    } catch (error) {
-      console.error('Error saving settings:', error);
+    } catch {
       return false;
     }
   }
@@ -242,6 +292,25 @@ class SettingsAPI {
           { from: 'arabic', to: 'persian' },
           { from: 'persian', to: 'arabic' }
         ]
+      },
+      translators: {
+        translators: [],
+        assistants: [],
+        editors: []
+      },
+      invoice: {
+        header: {
+          officeNumber: '',
+          translatorName: '',
+          officeName: '',
+          city: '',
+          address: '',
+          phone: '',
+          whatsapp: '',
+          telegram: '',
+          eitaa: ''
+        },
+        footer: 'توضیحات فاکتور'
       }
     };
   }
