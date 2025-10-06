@@ -231,54 +231,50 @@ class ClientsAPI {
     try {
       const headers = await this.getAuthHeaders();
       
-      // Update client data
+      // Update client data - use same structure as ClientProfile.tsx
+      const updates: Array<{field: string, value: string}> = [];
       
-      const updateData: {
-        title?: string;
-        content?: string;
-        meta: Record<string, unknown>;
-      } = {
-        meta: {
-          updated_at: new Date().toISOString()
-        }
-      };
-
       // Only include fields that are actually provided
       if (clientData.name !== undefined) {
-        updateData.title = clientData.name;
-        updateData.meta.client_name = clientData.name;
+        updates.push({ field: 'client_name', value: clientData.name });
       }
-      if (clientData.firstName !== undefined) updateData.meta.client_first_name = clientData.firstName;
-      if (clientData.lastName !== undefined) updateData.meta.client_last_name = clientData.lastName;
-      if (clientData.company !== undefined) updateData.meta.client_company = clientData.company;
-      if (clientData.phone !== undefined) updateData.meta.client_phone = clientData.phone;
-      if (clientData.email !== undefined) updateData.meta.client_email = clientData.email;
-      if (clientData.address !== undefined) updateData.meta.client_address = clientData.address;
-      if (clientData.nationalId !== undefined) updateData.meta.client_national_id = clientData.nationalId;
-      if (clientData.code !== undefined) updateData.meta.client_code = clientData.code;
-      if (clientData.serviceType !== undefined) updateData.meta.service_type = clientData.serviceType;
-      if (clientData.translateDate !== undefined) updateData.meta.translate_date = clientData.translateDate;
-      if (clientData.deliveryDate !== undefined) updateData.meta.delivery_date = clientData.deliveryDate;
-      if (clientData.status !== undefined) updateData.meta.client_status = clientData.status;
-      if (clientData.description !== undefined) updateData.meta.client_description = clientData.description;
+      if (clientData.firstName !== undefined) updates.push({ field: 'client_first_name', value: clientData.firstName });
+      if (clientData.lastName !== undefined) updates.push({ field: 'client_last_name', value: clientData.lastName });
+      if (clientData.company !== undefined) updates.push({ field: 'client_company', value: clientData.company });
+      if (clientData.phone !== undefined) updates.push({ field: 'client_phone', value: clientData.phone });
+      if (clientData.email !== undefined) updates.push({ field: 'client_email', value: clientData.email });
+      if (clientData.address !== undefined) updates.push({ field: 'client_address', value: clientData.address });
+      if (clientData.nationalId !== undefined) updates.push({ field: 'client_national_id', value: clientData.nationalId });
+      if (clientData.code !== undefined) updates.push({ field: 'client_code', value: clientData.code });
+      if (clientData.serviceType !== undefined) updates.push({ field: 'service_type', value: clientData.serviceType });
+      if (clientData.translateDate !== undefined) updates.push({ field: 'translate_date', value: clientData.translateDate });
+      if (clientData.deliveryDate !== undefined) updates.push({ field: 'delivery_date', value: clientData.deliveryDate });
+      if (clientData.status !== undefined) updates.push({ field: 'client_status', value: clientData.status });
+      if (clientData.description !== undefined) updates.push({ field: 'client_description', value: clientData.description });
 
-      // Send update data
-
-      // Try custom post type first
-      const response = await fetch(`${this.baseUrl}/${this.customPostType}/${id}`, {
+      // Try custom endpoint first (like ClientProfile.tsx)
+      const response = await fetch(`${this.baseUrl.replace('/wp-json/wp/v2', '')}/wp-json/custom/v1/clients/${id}/update`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(updates),
       });
-
-      // Check response status
 
       if (response.ok) {
         const post = await response.json();
-        // Update successful
+        
+        // If the response is a success message, we need to fetch the updated client
+        if (post.success && post.client_id) {
+          const updatedClient = await this.getClient(post.client_id);
+          if (updatedClient) {
+            return updatedClient;
+          }
+        }
+        
+        // Fallback: try to map the response directly
         return this.mapPostToClient(post);
       } else {
         const errorText = await response.text();
+        console.log('Error response:', errorText);
         // Update failed, trying fallback
       }
 
@@ -286,7 +282,7 @@ class ClientsAPI {
       const postsResponse = await fetch(`${this.baseUrl}/posts/${id}`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(updates),
       });
 
       if (postsResponse.ok) {

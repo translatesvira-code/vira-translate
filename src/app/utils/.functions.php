@@ -394,14 +394,6 @@ add_action('rest_api_init', function() {
             'id' => array(
                 'required' => true,
                 'type' => 'integer'
-            ),
-            'field' => array(
-                'required' => true,
-                'type' => 'string'
-            ),
-            'value' => array(
-                'required' => true,
-                'type' => 'string'
             )
         )
     ));
@@ -436,17 +428,71 @@ add_action('rest_api_init', function() {
 });
 
 function update_client_field($request) {
-    // Simple working version
+    // Get JSON data from request body
+    $json_params = $request->get_json_params();
     $client_id = $request['id'];
-    $field = $request['field'];
-    $value = $request['value'];
     
-    // Just update the meta field directly
-    $success = add_post_meta($client_id, $field, $value, true);
+    // Debug: Log the request
+    error_log("Update request for client ID: {$client_id}");
+    error_log("JSON params: " . print_r($json_params, true));
+    
+    // Check if client exists
+    $client_post = get_post($client_id);
+    if (!$client_post) {
+        error_log("Client post not found for ID: {$client_id}");
+        return new WP_Error('client_not_found', 'Client not found', array('status' => 404));
+    }
+    
+    // Check if we received an array of field-value pairs (new format)
+    if (is_array($json_params) && !empty($json_params)) {
+        $success_count = 0;
+        $total_fields = count($json_params);
+        
+        foreach ($json_params as $update) {
+            if (isset($update['field']) && isset($update['value'])) {
+                $field = $update['field'];
+                $value = $update['value'];
+                
+                // Debug: Log what we're trying to update
+                error_log("Updating field: {$field} with value: {$value} for client: {$client_id}");
+                
+                // Update the meta field - try update first, then add if it doesn't exist
+                $success = update_post_meta($client_id, $field, $value);
+                if ($success === false) {
+                    // If update failed, try adding the meta field
+                    $success = add_post_meta($client_id, $field, $value, true);
+                    error_log("Update failed, tried add_post_meta. Result: " . ($success ? 'success' : 'failed'));
+                } else {
+                    error_log("Update successful");
+                }
+                if ($success !== false) {
+                    $success_count++;
+                }
+            }
+        }
+        
+        return array(
+            'success' => true,
+            'message' => "Updated {$success_count} out of {$total_fields} fields successfully",
+            'client_id' => $client_id,
+            'updated_fields' => $success_count,
+            'total_fields' => $total_fields
+        );
+    }
+    
+    // Fallback to old format (single field-value pair)
+    $field = $request['field'] ?? $request->get_param('field');
+    $value = $request['value'] ?? $request->get_param('value');
+    
+    if (empty($field) || empty($value)) {
+        return new WP_Error('missing_params', 'Field and value are required', array('status' => 400));
+    }
+    
+    // Update the meta field
+    $success = update_post_meta($client_id, $field, $value);
     
     if ($success === false) {
-        // Try update_post_meta if add fails
-        $success = update_post_meta($client_id, $field, $value);
+        return new WP_Error('update_failed', 'Failed to update field', array('status' => 500));
     }
     
     return array(

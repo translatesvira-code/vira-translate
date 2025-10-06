@@ -4,6 +4,7 @@ export { default as TabButton } from './TabButton';
 export { default as Select } from './Select';
 export { default as RadioButton } from './RadioButton';
 export { default as Input } from './Input';
+export { default as QuickEditSidebar } from './QuickEditSidebar';
 
 export type { ButtonVariant, ButtonSize } from './Button';
 export type { TabButtonVariant } from './TabButton';

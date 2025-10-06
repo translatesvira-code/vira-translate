@@ -117,62 +117,9 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
     return languages[lang] || lang;
   };
 
-  const getStageOrder = (status: string): number => {
-    const stageMap: Record<string, number> = {
-      'acceptance': 1,
-      'completion': 2,
-      'translating': 3,
-      'translation': 3,
-      'editing': 4,
-      'office': 5,
-      'ready': 6,
-      'archived': 7
-    };
-    return stageMap[status] || 0;
-  };
+  // getStageOrder function removed as per user request
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!client || !orders.length) return;
-    
-    const latestOrder = orders[0];
-    
-    try {
-      // Update order status via custom API endpoint (POST method)
-      const url = `https://admin.viratranslate.ir/wp-json/custom/v1/orders/${latestOrder.id}/status`;
-      const requestBody = {
-        status: newStatus,
-        changed_by: 'Frontend User',
-        notes: `وضعیت به ${getStatusText(newStatus)} تغییر یافت`
-      };
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (response.ok) {
-        // Update local state
-        const updatedOrders = orders.map(order => 
-          order.id === latestOrder.id ? { 
-            ...order, 
-            status: newStatus as 'acceptance' | 'completion' | 'translation' | 'editing' | 'office' | 'ready' | 'archived' 
-          } : order
-        );
-        setOrders(updatedOrders);
-        
-        showNotification('وضعیت پروژه با موفقیت بروزرسانی شد', 'success');
-      } else {
-        const errorText = await response.text();
-        console.error('Status update failed:', response.status, errorText);
-        showNotification('خطا در بروزرسانی وضعیت', 'error');
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      showNotification('خطا در بروزرسانی وضعیت', 'error');
-    }
-  };
+  // handleStatusUpdate function removed as per user request
 
   const loadInvoiceSettings = useCallback(async () => {
     try {
@@ -1060,72 +1007,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientName }) => {
                       )}
                     </div>
             
-            {/* Project Progress */}
-            {orders.length > 0 && (
-              <div className="bg-white rounded-lg border border-[#C0B8AC66] p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-6 h-6 bg-[#A43E2F26] rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-[#A43E2F]" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <h2 className="text-lg font-medium text-[#48453F]">پیشرفت پروژه</h2>
-                </div>
-                
-                {/* Project Stages */}
-                <div className="space-y-3">
-                  {[
-                    { key: 'acceptance', label: 'پذیرش', order: 1 },
-                    { key: 'completion', label: 'تکمیل اطلاعات', order: 2 },
-                    { key: 'translating', label: 'ترجمه', order: 3 },
-                    { key: 'editing', label: 'ویرایش', order: 4 },
-                    { key: 'office', label: 'امور دفتری', order: 5 },
-                    { key: 'ready', label: 'آماده تحویل', order: 6 },
-                    { key: 'archived', label: 'بایگانی', order: 7 }
-                  ].map((stage) => {
-                    const latestOrder = orders[0]; // Get latest order status
-                    const isCurrentStage = latestOrder.status === stage.key;
-                    const isCompleted = getStageOrder(latestOrder.status) >= stage.order;
-                    const isClickable = getStageOrder(latestOrder.status) >= stage.order - 1;
-                    
-                    return (
-                      <button
-                        key={stage.key}
-                        onClick={() => isClickable && handleStatusUpdate(stage.key)}
-                        disabled={!isClickable}
-                        className={`w-full p-3 rounded-lg border text-right transition-all duration-200 cursor-pointer flex items-center justify-between ${
-                          isCompleted && !isCurrentStage
-                            ? 'bg-[#2B593E26] border-[#2B593E66] text-[#2B593E]'
-                            : isCurrentStage
-                            ? 'bg-[#A43E2F26] border-[#A43E2F66] text-[#A43E2F]'
-                            : 'bg-[#F7F2F214] border-[#C0B8AC66] text-[#656051] hover:bg-[#F7F2F2]'
-                        } ${!isClickable ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
-                      >
-                        <span className="text-sm font-medium">{stage.label}</span>
-                        <div className="flex items-center gap-2">
-                          {isCompleted && !isCurrentStage ? (
-                            <svg className="w-4 h-4 text-[#2B593E]" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <span className={`w-3 h-3 rounded-full ${
-                              isCurrentStage ? 'bg-[#A43E2F]' : 'bg-[#C0B8AC66]'
-                            }`}></span>
-                )}
-              </div>
-                      </button>
-                    );
-                  })}
-            </div>
-                
-                {/* Current Status Info */}
-                <div className="mt-4 pt-4 border-t border-[#C0B8AC66]">
-                  <div className="text-sm text-[#656051] text-center">
-                    وضعیت فعلی: <span className="font-medium text-[#48453F]">{getStatusText(orders[0].status)}</span>
-              </div>
-            </div>
-              </div>
-            )}
+            {/* Project Progress - Removed as per user request */}
           </div>
         )}
 
