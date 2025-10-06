@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { clientsAPI, Client } from '../../lib/clients-api';
+import { Client } from '../../lib/clients-api';
 import { unifiedAPI, CreateUnifiedOrderData, UnifiedOrder } from '../../lib/unified-api';
 import { settingsAPI, CategorySettings } from '../../lib/settings-api';
 import { useNotification } from '../../hooks/useNotification';
@@ -328,25 +328,6 @@ const OrderWizard: React.FC = () => {
   };
 
 
-  const getDocumentTypeText = (type: string) => {
-    // First try to find in categories
-    const category = categories.find(cat => cat.id === type);
-    if (category) {
-      return category.name;
-    }
-    
-    // Then try to find in document items
-    for (const cat of categories) {
-      if (cat.items && Array.isArray(cat.items)) {
-        const item = cat.items.find(item => item.id === type);
-        if (item) {
-          return `${cat.name} - ${item.name}`;
-        }
-      }
-    }
-    
-    return type;
-  };
 
   const getAllDocumentItems = (): Array<{id: string, name: string, categoryName: string}> => {
     const items: Array<{id: string, name: string, categoryName: string}> = [];
@@ -374,24 +355,7 @@ const OrderWizard: React.FC = () => {
     return items;
   };
 
-  const getLanguageText = (lang: string) => {
-    const languages: Record<string, string> = {
-      'persian': 'فارسی',
-      'english': 'انگلیسی',
-      'arabic': 'عربی',
-      'french': 'فرانسوی'
-    };
-    return languages[lang] || lang;
-  };
 
-  const getUrgencyText = (urgency: string) => {
-    const urgencies: Record<string, string> = {
-      'normal': 'عادی',
-      'urgent': 'فوری',
-      'very_urgent': 'خیلی فوری'
-    };
-    return urgencies[urgency] || urgency;
-  };
 
   const handleNext = async () => {
     if (currentStep === 1) {
@@ -606,62 +570,7 @@ const OrderWizard: React.FC = () => {
     }
   };
 
-  const updateOrderStatus = async (newStatus: string) => {
-    try {
-      setLoading(true);
-      
-      // First, update the order status in the backend
-      if (order.id) {
-        const success = await unifiedAPI.updateOrderStatus(
-          order.id, 
-          newStatus, 
-          'user', 
-          `وضعیت سفارش به ${getStatusText(newStatus)} تغییر یافت`
-        );
-        
-        if (!success) {
-          showNotification('خطا در به‌روزرسانی وضعیت سفارش در سرور', 'error');
-          return;
-        }
-      }
-      
-      // Update the local order status
-      setOrder(prev => ({ ...prev, status: newStatus as 'acceptance' | 'completion' | 'translating' | 'editing' | 'office' | 'ready' | 'archived' }));
-      
-      // If status is changing to 'ready', move client to archive
-      if (newStatus === 'ready') {
-        // Move client to archive status
-        if (selectedClient) {
-          try {
-            await clientsAPI.updateClient(selectedClient.id, { status: 'archived' });
-            showNotification('سفارش آماده تحویل شد و مشتری به بایگانی منتقل شد', 'success');
-          } catch (error) {
-            console.error('Error archiving client:', error);
-            showNotification('خطا در بایگانی مشتری', 'error');
-          }
-        }
-      } else {
-        showNotification(`وضعیت سفارش به ${getStatusText(newStatus)} تغییر یافت`, 'success');
-      }
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      showNotification('خطا در تغییر وضعیت سفارش', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const getStatusText = (status: string) => {
-    const statusTexts: Record<string, string> = {
-      'acceptance': 'پذیرش',
-      'completion': 'تکمیل',
-      'translation': 'ترجمه',
-      'editing': 'ویرایش',
-      'office': 'امور دفتری',
-      'ready': 'آماده تحویل'
-    };
-    return statusTexts[status] || status;
-  };
 
   const renderStepContent = () => {
     switch (currentStep) {
