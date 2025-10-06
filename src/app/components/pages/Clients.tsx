@@ -6,6 +6,7 @@ import { useTab } from '../../context/TabContext';
 import { clientsAPI, Client } from '../../lib/clients-api';
 import { UnifiedOrder } from '../../lib/unified-api';
 import { unifiedAPI } from '../../lib/unified-api';
+import QuickEditSidebar from '../ui/QuickEditSidebar';
 
 // Client interface is now imported from clients-api
 
@@ -21,6 +22,8 @@ const Clients: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleteModalClosing, setIsDeleteModalClosing] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [showEditSidebar, setShowEditSidebar] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 
   // Helper functions
   const getDisplayName = (client: Client) => {
@@ -40,6 +43,85 @@ const Clients: React.FC = () => {
   const handleDeleteClient = (client: Client) => {
     setClientToDelete(client);
     setShowDeleteModal(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setClientToEdit(client);
+    setShowEditSidebar(true);
+  };
+
+  const handleCloseEditSidebar = () => {
+    setShowEditSidebar(false);
+    setClientToEdit(null);
+  };
+
+  const handleSaveClient = async (updatedClient: Partial<Client>) => {
+    if (!clientToEdit) return;
+    
+    try {
+      // Update client in the backend
+      const updatedClientData = await clientsAPI.updateClient(clientToEdit.id, updatedClient);
+      
+      if (updatedClientData) {
+        // Find the order for this client
+        const relatedOrder = orders.find(order => order.clientId === clientToEdit.id.toString());
+        
+        if (relatedOrder) {
+          // Check if any fields were updated that need to be synced to the order
+          const needsOrderUpdate = 
+            (updatedClient.status && updatedClient.status !== clientToEdit.status) ||
+            (updatedClient.firstName && updatedClient.firstName !== clientToEdit.firstName) ||
+            (updatedClient.lastName && updatedClient.lastName !== clientToEdit.lastName) ||
+            (updatedClient.company && updatedClient.company !== clientToEdit.company);
+          
+          if (needsOrderUpdate) {
+            try {
+              // Update order data with new client information
+              const orderUpdateData: Partial<UnifiedOrder> = {};
+              
+              // Update status if changed
+              if (updatedClient.status && updatedClient.status !== clientToEdit.status) {
+                const orderStatusMap: Record<string, 'acceptance' | 'completion' | 'translation' | 'editing' | 'office' | 'ready' | 'archived'> = {
+                  'acceptance': 'acceptance',
+                  'completion': 'completion', 
+                  'translating': 'translation',
+                  'editing': 'editing',
+                  'office': 'office',
+                  'ready': 'ready',
+                  'archived': 'archived'
+                };
+                orderUpdateData.status = orderStatusMap[updatedClient.status] || 'acceptance';
+              }
+              
+              // Update client name fields
+              if (updatedClient.firstName !== undefined) {
+                orderUpdateData.clientFirstName = updatedClient.firstName;
+              }
+              if (updatedClient.lastName !== undefined) {
+                orderUpdateData.clientLastName = updatedClient.lastName;
+              }
+              if (updatedClient.company !== undefined) {
+                orderUpdateData.clientCompany = updatedClient.company;
+              }
+              
+              // Update the order
+              await unifiedAPI.updateUnifiedOrder(relatedOrder.id, orderUpdateData);
+              
+            } catch (error) {
+              console.error('Error updating order:', error);
+            }
+          }
+        }
+        
+        // Reload data to get the latest information from unified orders
+        await loadData();
+        
+        // Close sidebar
+        handleCloseEditSidebar();
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -162,9 +244,7 @@ const Clients: React.FC = () => {
     setLoading(true);
     try {
       // Load unified orders with complete client data
-      console.log('🔍 Loading unified orders...');
       const unifiedData = await unifiedAPI.getUnifiedOrders();
-      console.log('✅ Unified orders loaded:', unifiedData);
       
       // Store orders data
       setOrders(unifiedData.orders);
@@ -202,7 +282,6 @@ const Clients: React.FC = () => {
       // Filter out archived clients from main clients list
       const activeClients = uniqueClients.filter(client => client.status !== 'archived');
       
-      console.log('✅ Clients created from unified data:', activeClients);
       setClients(activeClients);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -352,7 +431,7 @@ const Clients: React.FC = () => {
                 {currentClients.map((client, index) => {
                   const order = orders.find(o => o.id.toString() === client.id.toString());
                   return (
-                    <tr key={client.id} className="hover:bg-gray-50 transition-colors duration-200">
+                    <tr key={`client-${client.id || client.code || index}`} className="hover:bg-gray-50 transition-colors duration-200">
                       <td className="px-6 py-4 text-sm text-gray-800">{toPersianNumbers(startIndex + index + 1)}</td>
                       <td className="px-6 py-4 text-sm text-gray-800 font-mono">{client.code}</td>
                       <td className="px-6 py-4 text-sm text-gray-800">
@@ -379,8 +458,18 @@ const Clients: React.FC = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-start gap-1">
                           <button 
+                            onClick={() => handleEditClient(client)}
+                            className="bg-[#687B6926] hover:bg-[#687B6940] text-[#687B69] p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                            title="ویرایش"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button 
                             onClick={() => handleDeleteClient(client)}
                             className="bg-[#A43E2F26] hover:bg-[#A43E2F40] text-[#A43E2F] p-2 rounded-lg transition-colors duration-200 cursor-pointer"
+                            title="حذف"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -525,6 +614,14 @@ const Clients: React.FC = () => {
         </div>
       </div>
       )}
+
+      {/* Quick Edit Sidebar */}
+      <QuickEditSidebar
+        isOpen={showEditSidebar}
+        onClose={handleCloseEditSidebar}
+        client={clientToEdit}
+        onSave={handleSaveClient}
+      />
     </div>
   );
 };
